@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博客开张：为什么是静态站 + github.io · Melavonmen</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="../index.html">Melavonmen</a>
+    <nav>
+      <a href="../index.html" class="active">文章</a>
+      <a href="../about.html">关于</a>
+      <a href="https://github.com/LXFLGH" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <article class="article">
+    <h1>博客开张：为什么是静态站 + github.io</h1>
+    <p class="meta">2026-09-25 · 随笔 / 建站</p>
+
+    <p>开个博客，主要记录独立游戏开发过程中的技术决策、踩坑和重构。第一篇先交代这个站本身的技术选型。</p>
+
+    <h2>选型：纯静态，零依赖</h2>
+    <ul>
+      <li><strong>不引框架</strong>：Hugo/Jekyll/Hexo 都很好，但为一个写作站引入一整套构建工具链不值当。手写 HTML + 一份 CSS，所见即所得。</li>
+      <li><strong>零外部 CDN</strong>：所有样式和脚本全部自包含——访问稳定性和隐私都更好，加载速度就是没有第三方请求的速度。</li>
+      <li><strong>托管在 GitHub Pages</strong>：仓库即站点，git push 即发布，版本历史天然存在。自定义域名和 HTTPS 都是免费的。</li>
+    </ul>
+
+    <h2>会写什么</h2>
+    <ul>
+      <li>FCN 的开发日志：架构演进、跨平台移植、bug 复盘</li>
+      <li>C++ 与浏览器桥接的工程实践</li>
+      <li>逆向工程与协议分析相关的技术笔记</li>
+    </ul>
+
+    <p>更新频率随缘，但尽量每篇都有可复现的证据和结论，不写空话。</p>
+
+    <a class="back" href="../index.html">← 返回文章列表</a>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>© 2026 Melavonmen · 由 GitHub Pages 托管</p></div>
+</footer>
+</body>
+</html>
