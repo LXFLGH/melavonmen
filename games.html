@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>游戏 · Melavonmen</title>
+<meta name="description" content="Melavonmen 的游戏作品列表：FarmCodeNote 与后续原型。">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">Melavonmen</a>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="games.html" class="active">游戏</a>
+      <a href="heatmap.html">热力图</a>
+      <a href="about.html">关于</a>
+      <a href="https://github.com/LXFLGH" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="page-head">
+    <h1>游戏作品</h1>
+    <p class="sub">用自研的零依赖引擎做的游戏与原型。页面建设中，先放进度。</p>
+  </section>
+
+  <article class="game-card game-featured">
+    <div class="game-top">
+      <div>
+        <h2>FarmCodeNote</h2>
+        <p class="game-sub">农场经营 × 塔防 · 内置视觉小说剧情</p>
+      </div>
+      <span class="badge badge-dev">开发中 · alpha</span>
+    </div>
+
+    <p>围绕一座会自己生长的农场：作物、火车运输、机器人自动化、哥布林突袭，外加一条可切换的视觉小说剧情线。整个项目 C++17 零第三方依赖，前端用 WebView 渲染，前后端保持逐比特可复现的一致性。</p>
+
+    <ul class="game-points">
+      <li><strong>确定性</strong>：同一存档同一输入，模拟结果逐比特一致（worldgen bit-identical）。</li>
+      <li><strong>三端桥接</strong>：CLI / GUI / HTTP 三种前端共用同一套 ActionDispatcher 仲裁。</li>
+      <li><strong>自带测试</strong>：SELFTEST 单元测试 + GUI / CLI 全路径覆盖，发版前必须全绿。</li>
+    </ul>
+
+    <dl class="meta-grid">
+      <div><dt>技术栈</dt><dd>C++17 · 自研引擎 · WebView 前端 · CMake</dd></div>
+      <div><dt>平台</dt><dd>Windows · macOS · Linux</dd></div>
+      <div><dt>状态</dt><dd>alpha 内测，单机开发中</dd></div>
+      <div><dt>验证方式</dt><dd>单元测试 + 存档回放 + 像素级截图比对</dd></div>
+    </dl>
+
+    <div class="tags">
+      <span class="tag">Simulation</span><span class="tag">Tower Defense</span><span class="tag">Visual Novel</span><span class="tag">Zero-Dependency</span>
+    </div>
+  </article>
+
+  <section class="placeholder-block">
+    <h2 class="list-title">占位：后续作品</h2>
+
+    <div class="nav-cards nav-cards-2">
+      <div class="nav-card is-placeholder">
+        <span class="nav-ico">◇</span>
+        <h3>下一部作品</h3>
+        <p>新项目的立项信息会放在这里：玩法一句话、目标平台、技术选型。</p>
+        <span class="nav-go">待补充</span>
+      </div>
+      <div class="nav-card is-placeholder">
+        <span class="nav-ico">◇</span>
+        <h3>原型与实验</h3>
+        <p>未成品的小实验：物理手感、程序化生成、逆向复刻的验证性质 demo。</p>
+        <span class="nav-go">待补充</span>
+      </div>
+    </div>
+
+    <p class="empty-note">这个页面已预留好结构，之后每个作品加一张 <code>.game-card</code> 即可。</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 Melavonmen · 由 GitHub Pages 托管 · <a href="index.html">返回首页</a></p>
+  </div>
+</footer>
+</body>
+</html>

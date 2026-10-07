@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Melavonmen · 博客</title>
+<title>Melavonmen · 独立游戏开发</title>
+<meta name="description" content="Melavonmen 的个人主页：独立游戏作品、开发记录与构建热力图。">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,7 +12,9 @@
   <div class="wrap">
     <a class="logo" href="index.html">Melavonmen</a>
     <nav>
-      <a href="index.html" class="active">文章</a>
+      <a href="index.html" class="active">首页</a>
+      <a href="games.html">游戏</a>
+      <a href="heatmap.html">热力图</a>
       <a href="about.html">关于</a>
       <a href="https://github.com/LXFLGH" target="_blank" rel="noopener">GitHub</a>
     </nav>
@@ -19,9 +22,36 @@
 </header>
 
 <main class="wrap">
-  <section class="hero">
-    <h1>把想法写下来，<br>把游戏做出来。</h1>
-    <p class="sub">独立游戏开发 · C++ / WebView / 逆向工程 · 记录构建过程的一切</p>
+  <section class="hero home-hero">
+    <p class="eyebrow">独立游戏开发 · 一个人做完设计与代码</p>
+    <h1>Melavonmen</h1>
+    <p class="sub">C++17 零依赖 · 自研引擎与工具链 · 把想法做成能跑的东西</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="games.html">看游戏</a>
+      <a class="btn" href="heatmap.html">提交热力图</a>
+      <a class="btn" href="https://github.com/LXFLGH" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </section>
+
+  <section class="nav-cards">
+    <a class="nav-card" href="games.html">
+      <span class="nav-ico">◆</span>
+      <h3>游戏作品</h3>
+      <p>FarmCodeNote 及后续原型——技术栈、当前进度、平台支持。</p>
+      <span class="nav-go">前往 →</span>
+    </a>
+    <a class="nav-card" href="heatmap.html">
+      <span class="nav-ico">▩</span>
+      <h3>贡献热力图</h3>
+      <p>按天统计的构建提交分布：月历、连续 streak 与时段打点。</p>
+      <span class="nav-go">查看 →</span>
+    </a>
+    <a class="nav-card" href="posts/2026-09-25-mac-gui-port.html">
+      <span class="nav-ico">✎</span>
+      <h3>开发记录</h3>
+      <p>移植踩坑、协议重实现、工具链折腾——失败与结论都写下来。</p>
+      <span class="nav-go">阅读 →</span>
+    </a>
   </section>
 
   <section class="post-list">
