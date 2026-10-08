@@ -15,3 +15,7 @@
 .site-footer{border-top:2px solid var(--acid);padding:30px 0 45px;margin-top:70px;color:var(--muted);font-size:12px}.site-footer a{color:var(--acid)}
 @media(max-width:760px){.wrap{width:calc(100% - 30px)}.site-header .wrap{align-items:flex-start;flex-direction:column;padding:15px 0;gap:10px}.site-header nav{gap:14px}.site-header nav a{font-size:11px;padding:6px 0}.home-hero{min-height:auto}.hero{padding:75px 0 70px}.hero h1{font-size:clamp(54px,13vw,100px)}.nav-cards,.nav-cards-2{grid-template-columns:1fr;gap:12px;margin-bottom:65px}.nav-card{min-height:190px}.post-card{display:block;padding:22px}.post-date{display:block;margin-bottom:12px}.meta-grid{grid-template-columns:1fr}.page-head{padding-top:65px}.article{padding-top:65px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Private project briefs are informational, not clickable cards. */
+.game-summary{cursor:default}
+.game-summary:hover{transform:none;box-shadow:none;border-color:var(--border);color:var(--ink)}
