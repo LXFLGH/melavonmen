@@ -19,3 +19,16 @@
 /* Private project briefs are informational, not clickable cards. */
 .game-summary{cursor:default}
 .game-summary:hover{transform:none;box-shadow:none;border-color:var(--border);color:var(--ink)}
+
+/* FCN original screenshots: full-frame previews, linked to the PNG originals. */
+#fcn,#fcn-screenshots{scroll-margin-top:140px}
+.game-screenshots{margin-top:36px;padding-top:24px;border-top:1px solid var(--line)}
+.screenshot-note{color:var(--muted);font-size:13px;margin:0 0 20px}
+.screenshot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.screenshot-grid figure{min-width:0;margin:0}
+.screenshot-featured{grid-column:1 / -1}
+.screenshot-grid a{display:block;border:1px solid var(--border);background:#10110f}
+.screenshot-grid a:hover{border-color:var(--acid)}
+.screenshot-grid img{display:block;width:100%;height:auto;image-rendering:pixelated}
+.screenshot-grid figcaption{padding-top:8px;color:var(--muted);font:12px/1.7 "Courier New",monospace}
+@media(max-width:760px){.screenshot-grid{grid-template-columns:1fr}}

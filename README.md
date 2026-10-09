@@ -16,17 +16,21 @@
 
 ```
 index.html          首页（个人主页：入口卡片 + 文章列表）
-games.html          游戏作品（作品卡片 + 后续作品占位）
+games.html          游戏作品（作品卡片 + FCN 实机截图 + 后续作品占位）
 heatmap.html        贡献热力图（自包含单页，保留 JS 数据逻辑，酸性主题内联）
 about.html          关于
 posts/              文章（独立 HTML，命名 YYYY-MM-DD-标题.html）
 css/style.css       全站样式（heatmap.html 不使用）
+assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图）
 ```
 
 ## 页面约定
 
 - 顶部导航顺序固定：首页 / 游戏 / 热力图 / 关于 / GitHub。
 - 新增游戏作品：复制 `games.html` 里的 `<article class="game-card">` 整块，改标题、状态徽章、要点列表与 `meta-grid` 元信息；`nav-card is-placeholder` 是空位占位样式。
+- FCN 作品条目可通过 `games.html#fcn` 直达；截图区为 `games.html#fcn-screenshots`，关于页的 FCN 介绍链接到此处。
+- 截图使用原始 PNG，当前为 2026-10-09 的 Windows Godot 实机画面，1200 × 760；按主页、农场、编辑器、任务、仓库、商店、股市、银行、手册、设置、剧情展示。截图不是 HTML demo，也不作为完整功能或动画验证的证据。
+- 画廊使用静态 `figure` + 原图链接，标明画面名称、版本和捕获日期；首图直接加载，其余懒加载，保留宽高、替代文本和移动端单列布局，不引入脚本或外部依赖。更换截图时同步本文、图片说明与实际捕获日期。
 - `heatmap.html` 由外部工具生成后整文件覆盖上传，保留顶部固定的「返回 Melavonmen」链接及数据和 JS 逻辑，发布时需保留尾部 Acid Graphics 样式覆盖。
   - 页面支持**多仓库切换**：顶部项目按钮在「全部项目 / FarmCodeNote / Artless」之间切换，全部区块（统计卡、日历、分布图、明细、tag）随之重算；合并视图里每条提交带项目标签。
   - 可用 `heatmap.html?p=<key>` 直达某个仓库（key 取 `fcn` / `artless` / `all`），默认展示全部项目。
