@@ -240,14 +240,14 @@ button:focus-visible,a:focus-visible{outline:3px solid #b49bff;outline-offset:3p
   <section class="card" id="tagCard"></section>
 
   <footer>
-    <b>这张图与 GitHub 主页热力图有什么不同？</b>
+    <b>历史快照（2026-10-07 生成）与 GitHub 主页热力图有什么不同？</b>
     <ul>
       <li>GitHub 主页热力图只统计<b>公开仓库</b>的提交，除非在 Settings → Public profile 勾选 <b>“Include private contributions”</b>。私有仓库的提交在主页上完全不计入。</li>
-      <li>本页把私有仓库的 git 记录也纳入：远端 API 拉取<b>全分支</b>；FarmCodeNote 另含本机克隆里尚未推送的提交。</li>
+      <li>本页展示的是历史导出时纳入的公开、私有及本地 Git 记录，<b>不是实时仓库统计</b>。当时的快照包含全分支记录及部分尚未推送的本地提交；现在的提交/推送状态可能已经改变。</li>
       <li>额外给出 GitHub 不提供的维度：<b>代码行数</b>（numstat 汇总）、<b>周×小时时段分布</b>、<b>分支 / 本机快照分布</b>、<b>tag 发布日</b>。</li>
       <li>行数分级采用<b>非零日分位数</b>（P25 / P50 / P75 / P90），首次整仓同步这类超大提交会自然饱和在最高档，不会压平其余格子。</li>
     </ul>
-    <p style="margin-top:10px">口径：日期取提交的 <b>author date</b>（+08:00）；同一提交在多个分支出现时仅计 1 次；<span class="badge loc">仅本地</span> 表示尚未推送到 GitHub；<span class="badge bulk">整仓</span> 表示该提交单次新增 ≥ 5 万行（多为首次整仓同步）。切换上方<b>项目按钮</b>可查看单个仓库或全部合并视图，合并视图的每条提交带项目标签。</p>
+    <p style="margin-top:10px"><strong>数据时效提醒（2026-10-18）：</strong>本页尚未重新采集 Git 历史。FarmCodeNote 快照截至 2026-09-23 17:16，Artless 快照截至 2026-10-07；此后的提交并未包含在统计中。<br>口径：日期取提交的 <b>author date</b>（+08:00）；同一提交在多个分支出现时仅计 1 次；<span class="badge loc">仅本地</span> 表示尚未推送到 GitHub；<span class="badge bulk">整仓</span> 表示该提交单次新增 ≥ 5 万行（多为首次整仓同步）。切换上方<b>项目按钮</b>可查看单个仓库或全部合并视图，合并视图的每条提交带项目标签。</p>
   </footer>
 
 </div>
