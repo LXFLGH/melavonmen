@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>游戏 · Melavonmen</title>
-<meta name="description" content="Melavonmen 的游戏作品列表：FarmCodeNote 与后续原型。">
+<meta name="description" content="Melavonmen 游戏开发进度：FarmCodeNote Godot 原生版、Artless 技术原型与飞跃幻想乡城镇 POC。更新于 2026-10-18。">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -25,22 +25,24 @@
   <section class="page-head">
     <p class="eyebrow">PROJECT INDEX / 002</p>
     <h1>游戏作品 / GAMES</h1>
-    <p class="sub">正在制作的游戏和实验性原型；有些已经可以运行，有些还只是一种可能。</p>
+    <p class="sub">可运行版本、技术原型与远期设计方向分开记录。项目状态核对：2026-10-18。</p>
   </section>
 
   <article class="game-card game-featured" id="fcn">
     <div class="game-top">
       <div>
         <h2>FarmCodeNote / FCN</h2>
-        <p class="game-sub">编程农场 × 经营模拟 × 塔防</p>
+        <p class="game-sub">编程自动化 × 农场经营 × 金融 × 剧情 × 塔防</p>
       </div>
-      <span class="badge badge-dev">开发中 / IN DEVELOPMENT</span>
+      <span class="badge badge-dev">alpha0.3 · Windows 预发布 / 持续开发</span>
     </div>
-    <p>用编程控制机器人经营农场、自动化生产与运输，穿插动态经济、金融系统和哥布林袭击。一个将编程、经营和探索融合在一起的独立游戏项目。</p>
+    <p>通过 FarmScript 编程控制机器人、火车与农场生产，同时经营仓库、商店、银行和股市，并应对哥布林袭击；游戏还包含任务挑战、教程、剧情对话与音乐。</p>
+    <p><strong>目前主线：</strong>自 alpha0.3 起，Windows 玩家客户端已切换为 <strong>Godot 原生像素界面</strong>，使用 GDExtension 连接 C++17 业务核心与 FarmScript；旧 WebView/HTML 客户端保留在历史分支，不再是主版本。Windows x64 预发布包已完成相应验证；macOS、Linux、Steam Deck 和完整通关测试不视为已通过。</p>
+    <p class="empty-note">进度核对：2026-10-18。近期仍在修正像素 UI、贴图尺寸与仓库显示。下方图片是 2026-10-09 的实机留档，并不代表后续界面修改已反映在截图中。</p>
 
     <section class="game-screenshots" id="fcn-screenshots" aria-labelledby="fcn-screenshots-title">
-      <h3 class="list-title" id="fcn-screenshots-title">GODOT / 像素主题实机截图</h3>
-      <p class="screenshot-note">Windows · Godot 4.7.2 · 2026-10-09 · 1200 × 760 原图。正在迁移像素主题前端，保留 C++ 核心与 FarmScript；以下为实机静态画面。点击截图查看原图。</p>
+      <h3 class="list-title" id="fcn-screenshots-title">GODOT / 2026-10-09 历史实机截图</h3>
+      <p class="screenshot-note">Windows · Godot 4.7.2 · 拍摄于 2026-10-09 · 1200 × 760 原图。以下是当时版本的实机静态画面；Godot 已是当前主客户端，但图片未涵盖 10 月 16—17 日及之后的界面与贴图调整。点击截图查看原图。</p>
       <div class="screenshot-grid">
         <figure class="screenshot-featured">
           <a href="assets/screenshots/fcn/godot/pixel-home.png" aria-label="查看原图：主页与农场演出">
@@ -119,18 +121,18 @@
       <div class="nav-card game-summary">
         <span class="nav-ico">✳</span>
         <h3>Artless / 魔女旅途</h3>
-        <p>HD-2D 商旅 RPG：动态市场与产业链、卡牌战斗、远行与探索。当前处于原型验证阶段。</p>
+        <p><strong>当前代码原型：</strong>PoC3 的黑白描边第一人称 3D 地牢，使用 C++ 权威后端、WebView2/WebGL 前端；已验证多层地图、旋转楼梯、移动碰撞、卡牌战斗与手绘卡牌流程。<strong>远期构想：</strong>商旅、动态市场与产业链等经营要素仍是设计方向，不应被当作当前已经实现的玩法。</p>
         <span class="nav-go">项目简介 / PROJECT BRIEF</span>
       </div>
       <div class="nav-card game-summary">
         <span class="nav-ico">◇</span>
         <h3>飞跃幻想乡</h3>
-        <p>东方 Project 同人飞行探索构想。以魔理沙的扫帚飞行为起点，把幻想乡变成可以旅行的世界。</p>
+        <p><strong>已有原型：</strong>基于 Three.js 的 HD-2D 人间之里城镇漫游 POC（ViewPOC7），规划了 90 个独立区块、约 1.296 km² 城区，使用 168 种建筑模板和按视距加载、卸载的场景系统。<strong>远期方向：</strong>魔理沙扫帚飞行、幻想乡观光与完整互动任务；当前城镇 POC 不等于这些玩法已完成。</p>
         <span class="nav-go">项目简介 / PROJECT BRIEF</span>
       </div>
     </div>
 
-    <p class="empty-note">实验项目的最终玩法、技术选择与发布日期均可能发生变化。</p>
+    <p class="empty-note">以上“当前代码原型”依据各自项目仓库的说明和验证记录整理；设计方向与已实现功能分别表述。原型不代表可发行的完整游戏；最终玩法、技术选择和发布日期可能调整。</p>
   </section>
 </main>
 
