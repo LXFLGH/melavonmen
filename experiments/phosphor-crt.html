@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
+  <script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed-mode');</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#080e11" />
+  <meta name="theme-color" content="#10110f" />
   <meta name="description" content="PHOSPHOR / LAB — Three.js 交互式复古 CRT 荧光显示器。球面玻璃、磷光余辉、扫描线、体积泛光与复古信号。" />
   <title>PHOSPHOR / LAB — Interactive CRT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,6 +20,85 @@
 @media(max-width:980px){.topbar-center{display:none}.workspace{grid-template-columns:260px minmax(320px,1fr);min-height:750px}.editorial{padding-top:80px}.editorial h1{font-size:51px}.control-panel{position:fixed;top:79px;bottom:0;right:0;width:min(360px,100vw);max-height:none;transform:translateX(105%);transition:transform .3s;z-index:16;box-shadow:-20px 0 70px #0009}.control-panel.open{transform:translateX(0)}.mobile-controls-button{display:block;position:fixed;right:24px;bottom:22px;z-index:17;background:#c5eacc;color:#12251b;border:0;padding:15px 19px;font-size:11px;box-shadow:0 10px 40px #0008}.site-footer{padding-right:205px}.footer-right{display:none}}
 @media(max-width:640px){.topbar{height:66px;flex-basis:66px;padding:0 20px}.brand{font-size:14px}.live-badge{font-size:7px;letter-spacing:.3px;gap:8px}.workspace{display:flex;flex-direction:column;min-height:unset}.editorial{order:2;border-right:0;border-top:1px solid var(--line);padding:32px 24px 34px}.editorial h1{font-size:clamp(55px,15vw,84px);margin:25px 0}.intro{font-size:15px}.intro-sub{font-size:11px}.separator{margin:30px 0}.spec-grid{grid-template-columns:repeat(4,1fr);gap:5px}.spec-value{font-size:20px}.spec-value span{font-size:10px}.spec-label{font-size:7px;line-height:1.5}.drag-instruction{margin-top:24px}.viewport{order:1;height:min(72vh,600px);min-height:420px}.coordinate-top{left:21px;right:19px;top:21px}.coordinate-right{right:13px}.coordinate-left{left:13px}.viewport-footer{left:20px;right:20px;bottom:23px;font-size:8px;white-space:nowrap}.reset-button{top:50px;right:20px}.control-panel{top:66px}.site-footer{height:auto;min-height:61px;padding:12px 24px 70px;line-height:1.8}.mobile-controls-button{right:18px;bottom:15px}.page-grain{opacity:.08}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* MELAVONMEN / ACID GRAPHICS — hardware lab shell.
+   The screen phosphor palettes and Three.js simulation deliberately stay authentic. */
+:root{
+  --background:#10110f;--panel:#1b1d19;--cream:#f2f3e9;--muted:#aeb2a4;
+  --line:#555a4e;--acid:#dcff46;--violet:#b49bff;--signal:#dcff46;
+  --display:Arial,Helvetica,sans-serif
+}
+body{background-color:var(--background);background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:48px 48px}
+::selection{background:var(--acid);color:#10110f}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+.topbar{background:#10110ff2;border-bottom:2px solid var(--acid)}
+.brand{font:900 18px/1 Arial,sans-serif;letter-spacing:-.065em;color:var(--cream)}
+.brandmark{border:2px solid var(--acid);border-radius:0;transform:rotate(0)}
+.brandmark span{background:var(--acid);border-radius:0}
+.brand-muted,.brand-tm{color:var(--acid)}
+.topbar-center.lab-back-link{border:1px solid var(--acid);padding:8px 14px;color:var(--acid);text-decoration:none;font:800 10px/1.4 "Courier New",monospace;letter-spacing:.04em;white-space:nowrap;transition:background .2s,color .2s}
+.topbar-center.lab-back-link:hover{background:var(--acid);color:#10110f}
+.live-badge{color:var(--acid)}.pulse-dot{box-shadow:0 0 11px #dcff4677}
+.editorial{background:radial-gradient(ellipse at 40% 35%,#262a1b,#151711 62%,#10110f);border-right:1px solid #707668}
+.eyebrow{color:var(--acid);font-weight:800}.eyebrow-line{background:var(--acid)}
+.editorial h1{font-weight:900;color:var(--cream);letter-spacing:-.075em}
+.editorial h1 em{display:inline-block;background:var(--acid);color:#10110f;font-weight:900;padding:0 .035em}
+.intro{color:var(--cream);font-weight:700}.intro-sub{color:var(--muted)}
+.spec-value{font-weight:900;color:var(--cream)}.spec-label{color:#afb69c}
+.drag-instruction,.mouse-icon{color:var(--acid);border-color:var(--acid)}
+.mouse-icon span{background:var(--acid)}
+.viewport{background:radial-gradient(ellipse at 50% 40%,#242d1e 0%,#192019 40%,#101510 80%);border-right:1px solid var(--line)}
+.viewport-vignette{box-shadow:inset 0 0 140px 25px #080c0877}
+.coordinate,.viewport-footer{color:#b1c49a}.coordinate-left span,.coordinate-right span{color:var(--acid)}
+.viewport-cross,.footer-divider,.footer-right span{color:var(--acid)}
+.ruler{background:linear-gradient(to right,#b3cc4a,transparent)}
+.reset-button{border:1px solid var(--acid);background:#1b2015e9;color:var(--acid);border-radius:0}
+.reset-button:hover{background:var(--acid);color:#10110f}
+.loading{color:var(--acid)}.loading-ring{border-color:#5b6b27;border-top-color:var(--acid)}
+.control-panel{background:linear-gradient(125deg,#22251b,#1b1d19 48%,#131510);border-left:1px solid #707668;scrollbar-color:#707668 transparent}
+.panel-kicker,.heading-dot,.panel-index{color:var(--acid)}
+.panel-heading h2{font-weight:900;letter-spacing:-.055em}
+.panel-rule{height:2px;background:linear-gradient(to right,var(--acid) 0 31%,#555a4e 31%)}
+.panel-section-head{color:var(--cream);font-weight:700}.panel-hint{color:var(--muted)}
+.source-btn{background:#171914;border:1px solid #707668;color:var(--muted);border-radius:0}
+.source-btn:hover{background:#303723;color:var(--cream)}
+.source-btn.active{background:var(--acid);color:#10110f;border-color:var(--acid);box-shadow:4px 4px 0 #434d21}
+.color-swatch{background:#171914;border-color:#707668;border-radius:0}
+.color-swatch.active{border-color:var(--acid);box-shadow:0 0 0 2px var(--acid)}
+.color-choice-note span:first-child,.range-head output{color:var(--cream)}
+.color-choice-note span:last-child,.range-head{color:var(--muted)}
+.range{background:linear-gradient(to right,var(--acid) var(--fill),#52574a var(--fill))}
+.range::-webkit-slider-thumb{background:var(--acid);border:2px solid #10110f;box-shadow:0 0 0 2px var(--acid)}
+.range::-moz-range-thumb{background:var(--acid);border:2px solid #10110f;border-radius:0}
+.power-row{border-top:1px solid var(--line)}.power-row small{color:var(--acid)}
+.power-button{border-color:#707668;border-radius:0;background:#10110f}
+.power-button.on{background:var(--acid);color:#10110f;border-color:var(--acid);box-shadow:0 0 12px #dcff4633}
+.randomize-button{background:var(--acid);color:#10110f;border:2px solid var(--acid);border-radius:0;font-weight:800}
+.randomize-button:hover{background:var(--violet);border-color:var(--violet)}
+.site-footer{border-top:2px solid var(--acid);background:#10110f;color:var(--muted)}
+.mobile-controls-button{background:var(--acid)!important;color:#10110f!important;border:2px solid #10110f!important;box-shadow:4px 4px 0 var(--violet)!important;font-weight:800}
+.noscript{background:#24291c;border:1px solid var(--acid);color:var(--cream)}
+/* Embedded preview: avoid nested headers and editorial, retain the full WebGL viewport. */
+html.embed-mode,html.embed-mode body{height:100%;min-height:100%}
+.embed-mode .page-grain,.embed-mode .topbar,.embed-mode .editorial,.embed-mode .site-footer{display:none}
+.embed-mode .site-shell{height:100%;min-height:100%}
+.embed-mode .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,285px);height:100%;min-height:0}
+.embed-mode .viewport{height:100%;min-height:0}
+.embed-mode .control-panel{max-height:100%;height:100%;overflow-y:auto}
+@media(max-width:980px){
+  .topbar-center.lab-back-link{display:flex;position:static;transform:none;margin-left:auto}
+  .embed-mode .workspace{display:block;height:100%;min-height:0}
+  .embed-mode .viewport{height:100%;min-height:0;width:100%}
+  .embed-mode .control-panel{top:0;bottom:0;height:auto;max-height:none}
+  .embed-mode .mobile-controls-button{bottom:14px}
+}
+@media(max-width:640px){
+  .brand{font-size:13px}
+  .topbar-center.lab-back-link{font-size:8px;padding:7px 8px}
+  .live-badge{display:none}
+  .embed-mode .viewport{min-height:0;height:100%}
+}
 
 </style>
   <script type="importmap">
@@ -38,7 +118,7 @@
         <span class="brandmark" aria-hidden="true"><span></span><span></span><span></span></span>
         <span>PHOSPHOR<span class="brand-muted"> / </span>LAB<span class="brand-tm">®</span></span>
       </div>
-      <div class="topbar-center"><span class="tiny-diamond"></span> INTERACTIVE EXPERIMENT <span class="tiny-diamond"></span> 001</div>
+      <a class="topbar-center lab-back-link" href="../art-poc.html" target="_top" aria-label="返回艺术 POC 展厅">← ART LAB / 返回展厅 ↗</a>
       <div class="live-badge"><span class="pulse-dot"></span> <span id="system-status">SIMULATION LIVE</span></div>
     </header>
 
