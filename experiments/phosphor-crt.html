@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#080e11" />
+  <meta name="description" content="PHOSPHOR / LAB — Three.js 交互式复古 CRT 荧光显示器。球面玻璃、磷光余辉、扫描线、体积泛光与复古信号。" />
+  <title>PHOSPHOR / LAB — Interactive CRT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+:root{--background:#080e11;--panel:#10181b;--cream:#f2f1e5;--muted:#758489;--line:#253438;--signal:#9dfca4;--mono:'DM Mono',ui-monospace,monospace;--display:'Space Grotesk',Arial,sans-serif}
+*{box-sizing:border-box}html,body{width:100%;min-height:100%;margin:0}body{background:var(--background);color:var(--cream);font-family:var(--mono);font-size:11px;overflow-x:hidden;-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline-offset:4px}::selection{background:#8afc9a;color:#07110a}.page-grain{position:fixed;inset:0;z-index:20;pointer-events:none;opacity:.13;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.23'/%3E%3C/svg%3E");mix-blend-mode:screen}.site-shell{min-height:100svh;display:flex;flex-direction:column}.topbar{height:79px;flex:0 0 79px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:1px solid var(--line);position:relative;z-index:5}.brand{font:700 16px var(--display);letter-spacing:-.5px;display:flex;align-items:center;gap:15px}.brandmark{height:24px;width:24px;position:relative;display:block;border:2px solid #dfeee5;border-radius:50%;transform:rotate(-35deg)}.brandmark span{position:absolute;display:block;background:#e9fff0;border-radius:99px}.brandmark span:nth-child(1){width:14px;height:2px;left:3px;top:5px}.brandmark span:nth-child(2){width:9px;height:2px;left:3px;top:10px}.brandmark span:nth-child(3){width:5px;height:2px;left:3px;top:15px}.brand-muted{color:#58666a}.brand-tm{font:500 9px var(--mono);vertical-align:top;margin-left:4px;color:#849391}.topbar-center{color:#687b7c;font-size:9px;letter-spacing:2px;display:flex;gap:18px;align-items:center;position:absolute;left:50%;transform:translateX(-50%)}.tiny-diamond{width:4px;height:4px;border:1px solid #879899;transform:rotate(45deg)}.live-badge{color:#b7d2be;font-size:9px;letter-spacing:1.4px;display:flex;gap:12px;align-items:center}.pulse-dot{width:7px;height:7px;background:var(--signal);border-radius:50%;box-shadow:0 0 13px #76f590;animation:pulse 2s ease-in-out infinite}@keyframes pulse{50%{opacity:.45;box-shadow:0 0 2px #76f590}}
+.workspace{flex:1;min-height:620px;display:grid;grid-template-columns:minmax(295px,24%) minmax(420px,1fr) minmax(285px,23%)}.editorial{padding:7.3vh 28px 36px 39px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;z-index:1;background:radial-gradient(ellipse at 20% 40%,#102021 0%,#0a1216 55%,#090f12 100%)}.eyebrow{font-size:9px;line-height:1.2;letter-spacing:1.5px;color:#8aaca0;display:flex;align-items:center;gap:10px;white-space:nowrap}.eyebrow-line{width:20px;height:1px;background:#82b997}.editorial h1{font:600 clamp(49px,5.5vw,100px)/.94 var(--display);letter-spacing:-.07em;margin:49px 0 35px;white-space:nowrap}.editorial h1 em{color:#9ed7ab;font-weight:500;font-style:normal}.intro{font:500 clamp(13px,1.08vw,18px)/1.7 var(--display);letter-spacing:.1em;margin:0 0 20px;color:#d3dbd6}.intro-sub{font:400 11px/2 var(--mono);color:#6f8380;margin:0}.separator{height:1px;background:var(--line);margin:auto 0 28px;min-height:1px}.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px 10px}.spec-grid>div{display:flex;flex-direction:column;gap:8px}.spec-value{font:600 28px/1 var(--display);color:#e8ede9;letter-spacing:-1px}.spec-value span{font-size:15px;margin-left:3px}.spec-label{color:#627773;font-size:8px;letter-spacing:1.1px}.drag-instruction{display:flex;align-items:center;gap:12px;color:#839d94;font-size:10px;margin-top:50px}.mouse-icon{width:17px;height:24px;border:1px solid #5d8674;border-radius:9px;display:grid;place-items:start center;padding-top:5px}.mouse-icon span{width:2px;height:6px;border-radius:3px;background:#9ef5aa;animation:wheel 1.5s ease infinite}@keyframes wheel{50%{transform:translateY(4px);opacity:.5}}
+.viewport{position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 46% 42%,#1c3231 0%,#132526 37%,#0b161a 78%)}#scene-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}#scene-canvas:active{cursor:grabbing}.viewport-vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 130px 25px #07111579}.coordinate{position:absolute;color:#819b98;font-size:9px;letter-spacing:1.4px;pointer-events:none}.coordinate-top{left:36px;right:35px;top:34px;display:flex;justify-content:space-between}.coordinate-left{left:37px;top:50%;writing-mode:vertical-rl;transform:rotate(180deg)}.coordinate-right{right:30px;top:50%;writing-mode:vertical-rl}.coordinate-left span,.coordinate-right span{color:#486964;padding:8px 0}.viewport-footer{position:absolute;left:36px;right:36px;bottom:34px;display:flex;gap:13px;align-items:center;font-size:9px;letter-spacing:1.2px;color:#819b95;pointer-events:none}.viewport-cross{font-size:16px;color:#b5e3c2}.ruler{height:1px;flex:1;background:linear-gradient(to right,#44665c,transparent)}.reset-button{position:absolute;top:67px;right:36px;border:1px solid #43625a;background:#132421b3;color:#d0e5d6;padding:10px 11px;font-size:15px;display:flex;align-items:center;gap:9px;transition:background .2s}.reset-button span{font-size:8px;letter-spacing:1px}.reset-button:hover{background:#21433b}.loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:18px;color:#acddbd;font-size:10px;letter-spacing:1.8px;transition:opacity .6s;pointer-events:none;white-space:nowrap}.loading.hidden{opacity:0}.loading-ring{height:42px;width:42px;border:1px solid #6aa585;border-top:2px solid #c6fdd7;border-radius:50%;animation:spin 1.5s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.control-panel{position:relative;z-index:2;border-left:1px solid #2b3b3c;background:linear-gradient(120deg,#142024,#0f171a 35%,#0d1518);display:flex;flex-direction:column;padding:36px clamp(21px,2.1vw,36px) 23px;min-width:0;max-height:calc(100svh - 129px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3c5351 transparent}.panel-heading{display:flex;justify-content:space-between;align-items:end}.panel-kicker{font-size:9px;letter-spacing:1.7px;color:#86aa9b}.panel-heading h2{font:600 clamp(19px,1.7vw,28px)/1.1 var(--display);letter-spacing:-1.2px;margin:13px 0 0}.heading-dot{color:#9ee5a4}.panel-index{color:#637f75;font-size:11px}.panel-rule{margin:28px 0 23px;background:linear-gradient(to right,#588675 0 28%,#34464a 28%);height:1px}.panel-section{margin-bottom:30px}.panel-section-head{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#d5e5db;font-size:9px;letter-spacing:1.1px;margin-bottom:18px}.panel-hint{color:#54786d;font-size:8px;white-space:nowrap}.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.source-btn{border:1px solid #344748;background:#172225;color:#839b96;min-height:68px;padding:12px 7px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:background .2s,border-color .2s,color .2s;font-size:8px;letter-spacing:.6px}.source-btn .source-icon{font:400 22px/1 var(--display)}.source-btn:hover{background:#203631;color:#defce7}.source-btn.active{background:#1d342b;color:#c5facc;border-color:#6aa886;box-shadow:inset 0 0 0 1px #23432d}.color-choice{display:flex;align-items:center;gap:10px}.color-swatch{border:1px solid #405554;background:#172325;padding:5px;display:grid;place-items:center;width:39px;height:39px;transition:border-color .2s}.color-swatch span{height:19px;width:19px;border-radius:50%;background:var(--swatch);box-shadow:0 0 13px color-mix(in srgb,var(--swatch),transparent 65%)}.color-swatch.active{border-color:#ceead5;box-shadow:0 0 0 1px #708f80}.color-choice-note{display:flex;flex-direction:column;gap:7px;margin-left:auto;white-space:nowrap}.color-choice-note span:first-child{font-size:10px;color:#a6d3af}.color-choice-note span:last-child{font-size:7px;color:#59776c;letter-spacing:1px}.controls-section{margin-bottom:12px}.range-head{display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;color:#9badab;font-size:9px;letter-spacing:.5px}.range-head output{font-size:10px;color:#d6efdc}.range{appearance:none;display:block;width:100%;height:2px;cursor:pointer;border:0;background:linear-gradient(to right,#a0e6af var(--fill),#3a4b4e var(--fill));outline:none}.range::-webkit-slider-thumb{appearance:none;width:10px;height:14px;background:#e0f4e4;border:2px solid #7cb191;box-shadow:0 0 0 3px #14221d;cursor:ew-resize}.range::-moz-range-thumb{width:9px;height:12px;background:#e0f4e4;border:2px solid #7cb191;border-radius:0;cursor:ew-resize}.panel-spacer{flex:1;min-height:22px}.power-row{border-top:1px solid #314548;padding:22px 0;display:flex;justify-content:space-between;align-items:center}.power-row>div{display:flex;flex-direction:column;gap:8px}.power-row strong{font-size:9px;letter-spacing:1.3px;font-weight:500}.power-row small{font-size:8px;letter-spacing:1.2px;color:#86b99b}.power-button{background:#1b2928;border:1px solid #40534e;color:#b7c6c0;display:grid;place-items:center;width:45px;height:43px;font-size:24px;transition:.2s}.power-button.on{background:#284d35;border-color:#72bb83;color:#a6f4af;box-shadow:0 0 18px #4ac46b23}.power-button:hover{filter:brightness(1.3)}.randomize-button{background:#acd9b7;color:#0a2015;border:0;height:45px;width:100%;font-size:10px;letter-spacing:1.1px;font-weight:500;transition:background .2s,transform .2s}.randomize-button:hover{background:#dbffe0;transform:translateY(-2px)}.panel-bottom{display:flex;justify-content:space-between;gap:8px;color:#506d65;border-top:1px solid #26393b;padding-top:20px;margin-top:25px;font-size:7px;letter-spacing:.6px;white-space:nowrap}.site-footer{border-top:1px solid var(--line);height:50px;flex:0 0 50px;display:flex;justify-content:space-between;align-items:center;padding:0 39px;color:#5f7673;font-size:8px;letter-spacing:1.3px}.footer-divider{color:#a3e7ad;margin:0 8px}.footer-right span{color:#91bd96;margin-left:10px}.mobile-controls-button{display:none}.noscript{position:fixed;bottom:20px;left:20px;background:#273e35;color:#fff;padding:20px;z-index:30}
+@media(max-width:1250px){.workspace{grid-template-columns:minmax(260px,24%) minmax(360px,1fr) minmax(270px,25%)}.editorial{padding-left:26px;padding-right:22px}.editorial h1{font-size:clamp(43px,5vw,67px)}.control-panel{padding-inline:23px}.topbar{padding:0 27px}.site-footer{padding:0 27px}}
+@media(max-width:980px){.topbar-center{display:none}.workspace{grid-template-columns:260px minmax(320px,1fr);min-height:750px}.editorial{padding-top:80px}.editorial h1{font-size:51px}.control-panel{position:fixed;top:79px;bottom:0;right:0;width:min(360px,100vw);max-height:none;transform:translateX(105%);transition:transform .3s;z-index:16;box-shadow:-20px 0 70px #0009}.control-panel.open{transform:translateX(0)}.mobile-controls-button{display:block;position:fixed;right:24px;bottom:22px;z-index:17;background:#c5eacc;color:#12251b;border:0;padding:15px 19px;font-size:11px;box-shadow:0 10px 40px #0008}.site-footer{padding-right:205px}.footer-right{display:none}}
+@media(max-width:640px){.topbar{height:66px;flex-basis:66px;padding:0 20px}.brand{font-size:14px}.live-badge{font-size:7px;letter-spacing:.3px;gap:8px}.workspace{display:flex;flex-direction:column;min-height:unset}.editorial{order:2;border-right:0;border-top:1px solid var(--line);padding:32px 24px 34px}.editorial h1{font-size:clamp(55px,15vw,84px);margin:25px 0}.intro{font-size:15px}.intro-sub{font-size:11px}.separator{margin:30px 0}.spec-grid{grid-template-columns:repeat(4,1fr);gap:5px}.spec-value{font-size:20px}.spec-value span{font-size:10px}.spec-label{font-size:7px;line-height:1.5}.drag-instruction{margin-top:24px}.viewport{order:1;height:min(72vh,600px);min-height:420px}.coordinate-top{left:21px;right:19px;top:21px}.coordinate-right{right:13px}.coordinate-left{left:13px}.viewport-footer{left:20px;right:20px;bottom:23px;font-size:8px;white-space:nowrap}.reset-button{top:50px;right:20px}.control-panel{top:66px}.site-footer{height:auto;min-height:61px;padding:12px 24px 70px;line-height:1.8}.mobile-controls-button{right:18px;bottom:15px}.page-grain{opacity:.08}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+</style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="page-grain" aria-hidden="true"></div>
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Phosphor Lab">
+        <span class="brandmark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>PHOSPHOR<span class="brand-muted"> / </span>LAB<span class="brand-tm">®</span></span>
+      </div>
+      <div class="topbar-center"><span class="tiny-diamond"></span> INTERACTIVE EXPERIMENT <span class="tiny-diamond"></span> 001</div>
+      <div class="live-badge"><span class="pulse-dot"></span> <span id="system-status">SIMULATION LIVE</span></div>
+    </header>
+
+    <main class="workspace">
+      <section class="editorial" aria-label="项目介绍">
+        <div class="eyebrow"><span class="eyebrow-line"></span> RETRO HARDWARE / REIMAGINED</div>
+        <h1>LIGHT<br>HAS A<br><em>MEMORY.</em></h1>
+        <p class="intro">那些仍在黑暗中缓慢消散的光。</p>
+        <p class="intro-sub">一台可以触碰的虚拟荧光显示器。<br>在玻璃曲面与电子束之间，重现 CRT 的温度。</p>
+        <div class="separator"></div>
+        <div class="spec-grid">
+          <div><span class="spec-value">P31</span><span class="spec-label">PHOSPHOR TYPE</span></div>
+          <div><span class="spec-value">60<span>Hz</span></span><span class="spec-label">VERTICAL SYNC</span></div>
+          <div><span class="spec-value">1984</span><span class="spec-label">DESIGN LANGUAGE</span></div>
+          <div><span class="spec-value">3D</span><span class="spec-label">REAL-TIME RENDER</span></div>
+        </div>
+        <div class="drag-instruction"><span class="mouse-icon"><span></span></span> 拖动旋转 · 滚轮缩放 · 双击复位</div>
+      </section>
+
+      <section class="viewport" aria-label="Three.js CRT 交互式三维模型">
+        <canvas id="scene-canvas"></canvas>
+        <div class="viewport-vignette" aria-hidden="true"></div>
+        <div class="coordinate coordinate-top"><span>FIG. 01</span><span>OSCILLOSCOPE / MODEL 84</span></div>
+        <div class="coordinate coordinate-left" aria-hidden="true">+Y <span>·</span> 0.000</div>
+        <div class="coordinate coordinate-right" aria-hidden="true">X: 0.147 <span> / </span> Z: 0.090</div>
+        <div class="viewport-footer"><span class="viewport-cross">✳</span> CURVED GLASS / ACTIVE PHOSPHOR <span class="ruler"></span><span>01 — 04</span></div>
+        <div id="loading" class="loading"><div class="loading-ring"></div><span>INITIALIZING ELECTRON BEAM...</span></div>
+        <button id="reset-camera" type="button" class="reset-button" title="复位视角" aria-label="复位视角">↺ <span>RESET VIEW</span></button>
+      </section>
+
+      <aside class="control-panel" id="control-panel" aria-label="CRT 实验控制台">
+        <div class="panel-heading"><div><span class="panel-kicker">CONTROL UNIT</span><h2>SIGNAL LAB<span class="heading-dot">.</span></h2></div><span class="panel-index">/ 001</span></div>
+        <div class="panel-rule"></div>
+        <section class="panel-section">
+          <div class="panel-section-head"><span>01 / INPUT SOURCE</span><span class="panel-hint">SELECT</span></div>
+          <div class="source-grid" role="group" aria-label="显示信号类型">
+            <button data-mode="terminal" class="source-btn active" type="button"><span class="source-icon">⌘</span><span>TERMINAL</span></button>
+            <button data-mode="wave" class="source-btn" type="button"><span class="source-icon">〰</span><span>WAVEFORM</span></button>
+            <button data-mode="radar" class="source-btn" type="button"><span class="source-icon">◎</span><span>RADAR</span></button>
+            <button data-mode="system" class="source-btn" type="button"><span class="source-icon">▥</span><span>TELEMETRY</span></button>
+          </div>
+        </section>
+        <section class="panel-section">
+          <div class="panel-section-head"><span>02 / PHOSPHOR COLOR</span><span class="panel-hint" id="color-name">P31 GREEN</span></div>
+          <div class="color-choice" role="group" aria-label="荧光粉颜色">
+            <button data-color="green" type="button" class="color-swatch active" aria-label="绿色 P31" title="P31 Green"><span style="--swatch:#99ff9b"></span></button>
+            <button data-color="amber" type="button" class="color-swatch" aria-label="琥珀色 P3" title="P3 Amber"><span style="--swatch:#ffba65"></span></button>
+            <button data-color="cyan" type="button" class="color-swatch" aria-label="青蓝色 P22" title="P22 Cyan"><span style="--swatch:#83e9ff"></span></button>
+            <div class="color-choice-note"><span id="color-wave">λ 545 nm</span><span>EMISSION</span></div>
+          </div>
+        </section>
+        <section class="panel-section controls-section">
+          <div class="panel-section-head"><span>03 / CALIBRATION</span><span class="panel-hint">ANALOG</span></div>
+          <label class="range-head" for="bloom"><span>PHOSPHOR BLOOM</span><output id="bloom-value">75%</output></label>
+          <input id="bloom" class="range" type="range" min="0" max="100" value="75" />
+          <label class="range-head" for="curvature"><span>GLASS CURVATURE</span><output id="curvature-value">68%</output></label>
+          <input id="curvature" class="range" type="range" min="0" max="100" value="68" />
+          <label class="range-head" for="scanlines"><span>SCANLINE DENSITY</span><output id="scanlines-value">65%</output></label>
+          <input id="scanlines" class="range" type="range" min="0" max="100" value="65" />
+          <label class="range-head" for="noise"><span>SIGNAL INTERFERENCE</span><output id="noise-value">12%</output></label>
+          <input id="noise" class="range" type="range" min="0" max="100" value="12" />
+        </section>
+        <div class="panel-spacer"></div>
+        <div class="power-row"><div><strong>POWER SUPPLY</strong><small id="power-hint">SYSTEM ONLINE</small></div><button id="power-toggle" type="button" class="power-button on" role="switch" aria-checked="true" aria-label="显示器电源"><span class="power-glyph">⏻</span></button></div>
+        <button id="randomize" type="button" class="randomize-button">↗ &nbsp; RANDOMIZE SIGNAL</button>
+        <div class="panel-bottom"><span>PHOSPHOR LABORATORY</span><span>EST. 1984 / V 1.0</span></div>
+      </aside>
+    </main>
+
+    <footer class="site-footer"><span>BUILT WITH THREE.JS <span class="footer-divider">//</span> PHYSICALLY INSPIRED CRT RENDERING</span><span class="footer-right">NO REAL ELECTRONS WERE HARMED <span>✳</span></span></footer>
+  </div>
+  <button type="button" class="mobile-controls-button" id="mobile-controls-button" aria-expanded="false" aria-controls="control-panel">⚙ &nbsp; 调整显示器</button>
+  <noscript><p class="noscript">需要启用 JavaScript 才能启动 Three.js 显示器。</p></noscript>
+  <script>
+    // Clear error state if external CDN modules cannot be loaded by the visitor.
+    window.addEventListener('error', (event) => {
+      if (window.__crtReady) return;
+      const l = document.getElementById('loading');
+      if (l) {
+        l.classList.remove('hidden');
+        l.innerHTML = '<span>THREE.JS MODULE UNAVAILABLE<br>请检查网络连接后刷新</span>';
+      }
+    });
+  </script>
+  <script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// PHOSPHOR / LAB — hand-built geometry, curved scan surface, procedurally rendered signals.
+const $ = (selector) => document.querySelector(selector);
+const canvas = $('#scene-canvas');
+const viewport = $('.viewport');
+const loading = $('#loading');
+
+const palettes = {
+  green: { color: 0x9fffad, css: '#a8ffc0', label: 'P31 GREEN', wave: 'λ 545 nm' },
+  amber: { color: 0xffb867, css: '#ffc57c', label: 'P3 AMBER', wave: 'λ 590 nm' },
+  cyan:  { color: 0x79e8ff, css: '#a9f0ff', label: 'P22 CYAN', wave: 'λ 495 nm' },
+};
+const state = {
+  mode: 'terminal', color: 'green', bloom: .75, curvature: .68,
+  scanlines: .65, noise: .12, power: true, powerValue: 1, lastInteraction: 0,
+};
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1619);
+scene.fog = new THREE.FogExp2(0x0b1619, .021);
+const camera = new THREE.PerspectiveCamera(37, 1, .1, 100);
+camera.position.set(5.1, 2.9, 9.1);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.27;
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(1,1), 1.1, .68, .45);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, -.04, 0);
+controls.enableDamping = true;
+controls.dampingFactor = .057;
+controls.minDistance = 6.2;
+controls.maxDistance = 15.5;
+controls.minPolarAngle = Math.PI * .25;
+controls.maxPolarAngle = Math.PI * .69;
+controls.minAzimuthAngle = -Math.PI * .40;
+controls.maxAzimuthAngle = Math.PI * .40;
+controls.enablePan = false;
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xa1ded4, 0x17221f, 2.0));
+const key = new THREE.DirectionalLight(0xdafff4, 4.1); key.position.set(-4, 8, 7); scene.add(key);
+const rim = new THREE.DirectionalLight(0x67c5ad, 2.4); rim.position.set(5, 2, -6); scene.add(rim);
+const bounce = new THREE.PointLight(0xaaffc4, 4.3, 8.5, 2); bounce.position.set(-3, -1, 4); scene.add(bounce);
+const screenLight = new THREE.PointLight(palettes.green.color, 2.4, 7, 2); screenLight.position.set(0, .5, 3.1); scene.add(screenLight);
+
+const monitor = new THREE.Group();
+scene.add(monitor);
+const MAT = {
+  body: new THREE.MeshStandardMaterial({color:0x485754, metalness:.49, roughness:.51}),
+  front: new THREE.MeshStandardMaterial({color:0x3d4d49, metalness:.54, roughness:.43}),
+  bezel: new THREE.MeshStandardMaterial({color:0x172522, metalness:.58, roughness:.29}),
+  inner: new THREE.MeshStandardMaterial({color:0x030b0b, metalness:.24, roughness:.2}),
+  edge: new THREE.MeshStandardMaterial({color:0x73847a, metalness:.78, roughness:.24}),
+  foot: new THREE.MeshStandardMaterial({color:0x1a2625, metalness:.43, roughness:.6}),
+  knob: new THREE.MeshStandardMaterial({color:0xb2c2b6, metalness:.8, roughness:.25}),
+  darkKnob: new THREE.MeshStandardMaterial({color:0x15201e, metalness:.6, roughness:.33}),
+  rubber: new THREE.MeshStandardMaterial({color:0x0e1617, metalness:.08, roughness:.94}),
+};
+
+function roundedShape(width, height, radius, cx=0, cy=0) {
+  const x = cx-width/2, y=cy-height/2, r=Math.min(radius,width/2,height/2);
+  const s = new THREE.Shape();
+  s.moveTo(x+r,y); s.lineTo(x+width-r,y); s.quadraticCurveTo(x+width,y,x+width,y+r);
+  s.lineTo(x+width,y+height-r); s.quadraticCurveTo(x+width,y+height,x+width-r,y+height);
+  s.lineTo(x+r,y+height); s.quadraticCurveTo(x,y+height,x,y+height-r);
+  s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
+  return s;
+}
+function extrusion(width,height,radius,depth,material,position,bevel=.035,cy=0) {
+  const g=new THREE.ExtrudeGeometry(roundedShape(width,height,radius,0,cy), {
+    depth,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:4,curveSegments:12,steps:1
+  });
+  const m=new THREE.Mesh(g,material);m.position.set(...position);monitor.add(m);return m;
+}
+function cuboid(x,y,z,w,h,d,material) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), material);
+  mesh.position.set(x,y,z);monitor.add(mesh);return mesh;
+}
+function cylinder(x,y,z,radius,depth,material,rotationX=Math.PI/2,segments=40) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,depth,segments),material);
+  m.rotation.x=rotationX;m.position.set(x,y,z);monitor.add(m);return m;
+}
+
+// Outer cabinet: a deep, heavy industrial shell with a slightly inset front face.
+extrusion(5.00,4.22,.40,2.56,MAT.body,[0,0,-1.64],.12);
+extrusion(4.91,4.12,.39,.25,MAT.front,[0,0,.96],.06);
+extrusion(4.72,3.99,.38,.09,MAT.edge,[0,0,1.23],.017);
+extrusion(4.67,3.94,.36,.09,MAT.front,[0,0,1.31],.016);
+
+// Black inset and extruded bevel ring are separate from the emissive tube glass.
+extrusion(4.20,3.13,.38,.045,MAT.inner,[0,.31,1.40],.015);
+const frameShape=roundedShape(4.55,3.46,.38,0,.30);
+const hole=roundedShape(3.83,2.82,.27,0,.30);
+// Three.js holes require reverse winding. Path.fromPoints is not needed: reverse its point order.
+const holePoints=hole.getPoints(18).reverse();
+const holePath=new THREE.Path(); holePath.setFromPoints(holePoints); frameShape.holes.push(holePath);
+const bezelGeom=new THREE.ExtrudeGeometry(frameShape,{depth:.14,bevelEnabled:true,bevelSegments:4,steps:1,bevelThickness:.045,bevelSize:.037,curveSegments:16});
+const bezel=new THREE.Mesh(bezelGeom,MAT.bezel);bezel.position.z=1.44;monitor.add(bezel);
+
+// Small metal screws / edge highlights.
+for (const [x,y] of [[-2.16,1.79],[2.16,1.79],[-2.16,-1.22],[2.16,-1.22]]) {
+  cylinder(x,y,1.645,.054,.03,MAT.edge);
+  const slot=cuboid(x,y,1.674,.061,.011,.009,MAT.inner);slot.rotation.z=Math.PI/4;
+}
+for (const x of [-1.81,1.81]) {
+  extrusion(.81,.28,.10,.4,MAT.foot,[x,-2.21,-.82],.015);
+  cuboid(x,-2.44,-.64,.81,.10,.65,MAT.rubber);
+}
+// Cabinet right-side stamped ventilation apertures and top seam.
+for(let i=0;i<12;i++) {
+  const y=-.80+i*.17;
+  const slat=cuboid(2.53,y,-.60,.017,.065,1.05,MAT.rubber);
+  slat.rotation.z=-.03;
+  cuboid(2.54,y+.028,-.58,.011,.012,1.03,MAT.edge);
+}
+cuboid(0,2.115,-.55,4.3,.015,1.64,MAT.edge);
+// Front fascia labeling and real controls.
+const labelCanvas=document.createElement('canvas'); labelCanvas.width=690;labelCanvas.height=86;
+const labelCtx=labelCanvas.getContext('2d');labelCtx.fillStyle='rgba(0,0,0,0)';labelCtx.clearRect(0,0,690,86);
+labelCtx.fillStyle='#d9e5d8';labelCtx.font='700 43px monospace';labelCtx.fillText('PHOSPHOR',8,53);
+labelCtx.fillStyle='#91a99b';labelCtx.font='25px monospace';labelCtx.fillText('MODEL 84',362,51);
+const labelTex=new THREE.CanvasTexture(labelCanvas);labelTex.colorSpace=THREE.SRGBColorSpace;
+const labelMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.45,.31),new THREE.MeshBasicMaterial({map:labelTex,transparent:true,depthWrite:false}));
+labelMesh.position.set(-1.08,-1.73,1.52);monitor.add(labelMesh);
+for(let i=0;i<3;i++) {
+  const x=1.25+i*.45;
+  cylinder(x,-1.73,1.53,.158,.095,MAT.darkKnob);
+  cylinder(x,-1.73,1.61,.112,.10,MAT.knob);
+  cuboid(x+.017,-1.64,1.674,.025,.083,.016,MAT.inner);
+}
+const ledMat=new THREE.MeshBasicMaterial({color:0x96ffaa});
+const led=cylinder(-2.0,-1.74,1.54,.049,.04,ledMat);
+const ledHalo=cylinder(-2.0,-1.74,1.555,.087,.003,new THREE.MeshBasicMaterial({color:0x62ff80,transparent:true,opacity:.15}));
+
+// The CRT surface is a real tessellated, convex mesh. Every change in curvature rebuilds its vertices.
+const SCREEN_W=3.79,SCREEN_H=2.79,SCREEN_Y=.30;
+function makeCurvedGlass(curve=.68,extraDepth=0){
+  const segX=96,segY=72;
+  const pos=[],uv=[],indices=[];
+  for(let j=0;j<=segY;j++) for(let i=0;i<=segX;i++) {
+    const u=i/segX,v=j/segY;
+    const x=(u-.5)*SCREEN_W,y=(v-.5)*SCREEN_H;
+    const nx=x/(SCREEN_W*.5),ny=y/(SCREEN_H*.5);
+    // Spherical-cap approximation: convex center and gently recessed corners.
+    const z=1.575 + extraDepth + curve*.36*Math.sqrt(Math.max(0,1-.47*(nx*nx+ny*ny)));
+    pos.push(x,y+SCREEN_Y,z);uv.push(u,v);
+  }
+  for(let j=0;j<segY;j++) for(let i=0;i<segX;i++) {
+    const a=j*(segX+1)+i, b=a+1,c=a+segX+1,d=c+1;
+    indices.push(a,b,c,b,d,c);
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(indices);g.computeVertexNormals();return g;
+}
+const displayCanvas=document.createElement('canvas'); displayCanvas.width=1024; displayCanvas.height=768;
+const dc=displayCanvas.getContext('2d',{alpha:false});
+dc.fillStyle='black';dc.fillRect(0,0,1024,768);
+const tex=new THREE.CanvasTexture(displayCanvas);tex.colorSpace=THREE.SRGBColorSpace;
+tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;
+
+const displayMaterial=new THREE.ShaderMaterial({
+  uniforms:{uTex:{value:tex},uTint:{value:new THREE.Color(palettes.green.color)},uTime:{value:0},uScanlines:{value:.65},uNoise:{value:.12},uPower:{value:1}},
+  vertexShader:`varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`
+    precision highp float;
+    uniform sampler2D uTex;
+    uniform vec3 uTint;
+    uniform float uTime,uScanlines,uNoise,uPower;
+    varying vec2 vUv;
+    float rnd(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float roundedRect(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}
+    void main(){
+      vec2 uv=vUv;
+      float mask=1.-smoothstep(-.010,.024,roundedRect((uv-.5)*vec2(3.79,2.79),vec2(1.895,1.395),.22));
+      if(mask<=.005)discard;
+      float visibleRange=max(uPower,.0001);
+      vec2 sampleUv=uv;
+      sampleUv.y=(uv.y-.5)/visibleRange+.5;
+      float present=step(0.,sampleUv.y)*step(sampleUv.y,1.);
+      float signal=texture2D(uTex,clamp(sampleUv,0.,1.)).r*present;
+      float scan=1.-uScanlines*(.24+.18*cos(uv.y*768.*3.14159));
+      float lattice=.945+.055*cos(uv.x*1024.*3.14159);
+      float vignette=1.-.49*pow(length((uv-.5)*vec2(1.22,1.10)),1.8);
+      float noise=(rnd(floor(uv*vec2(1024.,768.))+floor(uTime*38.))-.5)*uNoise*.17;
+      float beam=.045*exp(-pow(fract(uv.y-uTime*.13)-.5,2.)*1500.);
+      float power=clamp(uPower*1.85,0.,1.);
+      float b=max(0.,(signal*scan*lattice*1.86+beam*signal+noise)*vignette)*power;
+      // CRT power-off leaves a bright filament before complete darkness.
+      float filament=(1.-smoothstep(0.,.095,abs(uv.y-.5)))*max(0.,.16-uPower)*2.1;
+      vec3 color=vec3(.005,.013,.012)+uTint*(b+filament);
+      float edge=1.-smoothstep(.62,.98,length((uv-.5)*2.));
+      color*=.72+.28*edge;
+      gl_FragColor=vec4(color*mask,1.);
+    }`
+});
+const glassMaterial=new THREE.ShaderMaterial({
+  uniforms:{uTime:{value:0},uTint:{value:new THREE.Color(palettes.green.color)}},
+  vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vE;
+    void main(){vUv=uv;vec4 p=modelViewMatrix*vec4(position,1.);vE=normalize(-p.xyz);vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*p;}`,
+  fragmentShader:`precision highp float;varying vec2 vUv;varying vec3 vN;varying vec3 vE;uniform vec3 uTint;uniform float uTime;
+    float rect(vec2 p,vec2 b,float r){vec2 q=abs(p)-b+r;return length(max(q,0.))+min(max(q.x,q.y),0.)-r;}
+    void main(){vec2 uv=vUv;if(rect((uv-.5)*vec2(3.79,2.79),vec2(1.895,1.395),.22)>.0)discard;
+      float f=pow(1.-abs(dot(normalize(vN),normalize(vE))),2.8);
+      vec2 p=uv-vec2(.73,.82);p.x+=p.y*.49;
+      float streak=exp(-p.x*p.x*9.-p.y*p.y*118.)*.092;
+      float diffuse=exp(-pow(length((uv-vec2(.85,.93))*vec2(2.,3.)),2.)*14.)*.065;
+      float alpha=clamp(f*.25+streak+diffuse,.0,.25);
+      gl_FragColor=vec4(mix(vec3(.35,.52,.51),uTint*.70,.25),alpha);
+    }`,
+  transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+});
+const screenMesh=new THREE.Mesh(makeCurvedGlass(state.curvature),displayMaterial);
+const glassMesh=new THREE.Mesh(makeCurvedGlass(state.curvature,.019),glassMaterial);
+monitor.add(screenMesh,glassMesh);
+
+// A genuine curved glass rim: translucent concentric perimeter tubes with slight tint.
+const rimMat=new THREE.MeshStandardMaterial({color:0x26453a,metalness:.75,roughness:.2,transparent:true,opacity:.74});
+const edgePoints=[];
+const edgeW=SCREEN_W*.493,edgeH=SCREEN_H*.492;
+const glassPath=roundedShape(edgeW*2,edgeH*2,.20,0,SCREEN_Y);
+for(const p of glassPath.getPoints(55)) {
+  const nx=p.x/(SCREEN_W*.5),ny=(p.y-SCREEN_Y)/(SCREEN_H*.5);
+  edgePoints.push(new THREE.Vector3(p.x,p.y,1.575+state.curvature*.36*Math.sqrt(Math.max(0,1-.47*(nx*nx+ny*ny)))+.022));
+}
+let glassEdge=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(edgePoints),new THREE.LineBasicMaterial({color:0x68877a,transparent:true,opacity:.38}));
+monitor.add(glassEdge);
+function updateGlassCurve(){
+  const geometry=makeCurvedGlass(state.curvature);
+  const overlay=makeCurvedGlass(state.curvature,.019);
+  screenMesh.geometry.dispose();glassMesh.geometry.dispose();
+  screenMesh.geometry=geometry;glassMesh.geometry=overlay;
+  const points=[];
+  for(const p of glassPath.getPoints(55)) {
+    const nx=p.x/(SCREEN_W*.5),ny=(p.y-SCREEN_Y)/(SCREEN_H*.5);
+    points.push(new THREE.Vector3(p.x,p.y,1.575+state.curvature*.36*Math.sqrt(Math.max(0,1-.47*(nx*nx+ny*ny)))+.022));
+  }
+  glassEdge.geometry.dispose();glassEdge.geometry=new THREE.BufferGeometry().setFromPoints(points);
+}
+
+// Ground contact, a diffuse soft shadow and subtle laboratory grid.
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x10201f,roughness:.91,metalness:.09}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-2.53;scene.add(floor);
+const shadowCanvas=document.createElement('canvas');shadowCanvas.width=256;shadowCanvas.height=256;
+const sx=shadowCanvas.getContext('2d');const grad=sx.createRadialGradient(128,128,9,128,128,127);
+grad.addColorStop(0,'rgba(0,0,0,.67)');grad.addColorStop(.5,'rgba(0,0,0,.38)');grad.addColorStop(1,'rgba(0,0,0,0)');sx.fillStyle=grad;sx.fillRect(0,0,256,256);
+const shadow=new THREE.Mesh(new THREE.PlaneGeometry(9.1,6.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false,opacity:.8}));
+shadow.rotation.x=-Math.PI/2;shadow.position.set(.3,-2.516,-.6);scene.add(shadow);
+const grid=new THREE.GridHelper(30,30,0x345952,0x263d39);grid.position.y=-2.518;
+Array.from(grid.material instanceof Array?grid.material:[grid.material]).forEach(m=>{m.transparent=true;m.opacity=.18;m.depthWrite=false;});scene.add(grid);
+const dustPositions=new Float32Array(160*3);
+for(let i=0;i<160;i++){dustPositions[i*3]=(Math.random()-.5)*20;dustPositions[i*3+1]=Math.random()*8-2.5;dustPositions[i*3+2]=(Math.random()-.5)*16;}
+const dustGeometry=new THREE.BufferGeometry();dustGeometry.setAttribute('position',new THREE.BufferAttribute(dustPositions,3));
+const dust=new THREE.Points(dustGeometry,new THREE.PointsMaterial({color:0x7cb7a4,size:.025,opacity:.38,transparent:true,sizeAttenuation:true,depthWrite:false}));scene.add(dust);
+
+// === A high-resolution software signal generator, mapped onto the physical tube ===
+const CW=1024,CH=768;
+function text(str,x,y,size=20,alpha=1,align='left'){
+  dc.save();dc.font=`${size}px 'Courier New',monospace`;dc.fillStyle=`rgba(255,255,255,${alpha})`;dc.textAlign=align;dc.fillText(str,x,y);dc.restore();
+}
+function line(x1,y1,x2,y2,alpha=.4,width=1){
+  dc.strokeStyle=`rgba(255,255,255,${alpha})`;dc.lineWidth=width;dc.beginPath();dc.moveTo(x1,y1);dc.lineTo(x2,y2);dc.stroke();
+}
+function glowLine(draw,width=2,blur=18){
+  dc.save();dc.shadowColor='white';dc.shadowBlur=blur;dc.strokeStyle='rgba(255,255,255,.68)';dc.lineWidth=width*1.8;dc.beginPath();draw();dc.stroke();
+  dc.shadowBlur=0;dc.strokeStyle='rgba(255,255,255,1)';dc.lineWidth=width;dc.beginPath();draw();dc.stroke();dc.restore();
+}
+function gridLines(spacing=64,a=.06){
+  for(let x=0;x<CW;x+=spacing)line(x,0,x,CH,a);
+  for(let y=0;y<CH;y+=spacing)line(0,y,CW,y,a);
+}
+let terminalStart=performance.now()/1000;
+function terminal(t){
+  const shown=Math.min(15,Math.floor((t-terminalStart)*3.9));
+  line(62,102,966,102,.56,2);
+  text('PHOSPHOR-84 / BOOT ROM',65,73,30,.92);
+  text('V 2.8.04',959,71,22,.62,'right');
+  text('64K MEMORY  ..................................  OK',66,158,24,.72);
+  text('VIDEO BUFFER  ...............................  OK',66,197,24,.72);
+  text('BEAM ALIGNMENT  .............................  OK',66,236,24,.72);
+  line(66,269,953,269,.27);
+  const lines=[
+    '> INITIALIZING PHOSPHOR DISPLAY',
+    '> HORIZONTAL SYNC   15.734 KHZ',
+    '> VERTICAL REFRESH   60.000 HZ',
+    '> ELECTRON GUN      STABLE',
+    '> CURVATURE COMPENSATION ACTIVE',
+    '> LOADING SIGNAL GENERATOR ...',
+    '> CRT LAB READY.',
+    '',
+    'LIGHT IS INFORMATION.',
+    'MEMORY IS WHAT REMAINS.'
+  ];
+  lines.slice(0,shown).forEach((s,i)=>text(s,66,314+i*33,22,i<7?.81:.94));
+  const promptY=355+Math.min(shown,lines.length)*33;
+  if(shown>=7 && Math.floor(t*1.7)%2===0){dc.fillStyle='rgba(255,255,255,.95)';dc.fillRect(67,Math.min(CH-90,promptY)-24,17,26);}
+  text('SYS: OPTIMAL',67,708,20,.75);text('USER@PHOSPHOR:~',950,708,19,.74,'right');
+  line(60,727,961,727,.45,1);
+}
+function waveform(t){
+  gridLines(64,.12);
+  dc.save();dc.strokeStyle='rgba(255,255,255,.17)';dc.setLineDash([3,9]);dc.lineWidth=1;
+  dc.beginPath();dc.moveTo(0,CH/2);dc.lineTo(CW,CH/2);dc.stroke();dc.restore();
+  text('CH01   1.00 V/DIV',56,67,24,.92);
+  text('TIMEBASE: 20 MS',970,67,24,.76,'right');
+  glowLine(()=>{
+    for(let x=0;x<CW;x+=2){
+      const q=x/CW,phase=q*Math.PI*10-t*2.65;
+      const pulse=1+.20*Math.sin(q*19-t*.64);
+      const y=384+(-160*Math.sin(phase)-35*Math.sin(phase*2.7+.32*t)-13*Math.cos(q*130-t*3))*pulse;
+      if(x===0)dc.moveTo(x,y);else dc.lineTo(x,y);
+    }
+  },3,16);
+  glowLine(()=>{
+    for(let x=0;x<CW;x+=4){const q=x/CW;const y=405-89*Math.cos(q*Math.PI*14+t*1.38)*(.3+.7*Math.sin(q*18+t*.6)**2);if(x===0)dc.moveTo(x,y);else dc.lineTo(x,y);}
+  },1.6,10);
+  line(52,674,962,674,.5);text('TRIGGER: AUTO',56,717,22,.81);text('FREQUENCY 1.258 KHZ',971,717,22,.81,'right');
+  for(let y=160;y<660;y+=64){line(506,y,518,y,.44);}
+}
+const blips=[{x:.27,y:.21,r:6},{x:-.40,y:-.12,r:5},{x:.58,y:-.26,r:7},{x:-.18,y:.47,r:4},{x:.05,y:-.65,r:5}];
+function radar(t){
+  const cx=510,cy=386,r=278;
+  gridLines(84,.055);
+  for(let i=1;i<=4;i++){
+    dc.strokeStyle=`rgba(255,255,255,${i===4?.47:.15})`;dc.lineWidth=i===4?3:2;
+    dc.beginPath();dc.arc(cx,cy,r*i/4,0,Math.PI*2);dc.stroke();
+  }
+  line(cx-r-42,cy,cx+r+42,cy,.19);line(cx,cy-r-29,cx,cy+r+29,.19);
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
+    line(cx+Math.cos(a)*r*.96,cy+Math.sin(a)*r*.96,x,y,.54,2);
+  }
+  const angle=(t*.83)%(Math.PI*2);
+  dc.save();dc.translate(cx,cy);dc.rotate(angle);
+  const sweep=dc.createRadialGradient(0,0,20,0,0,r);sweep.addColorStop(0,'rgba(255,255,255,.015)');sweep.addColorStop(.6,'rgba(255,255,255,.035)');sweep.addColorStop(1,'rgba(255,255,255,.18)');
+  dc.fillStyle=sweep;dc.beginPath();dc.moveTo(0,0);dc.arc(0,0,r,-.62,0,false);dc.closePath();dc.fill();
+  dc.shadowColor='white';dc.shadowBlur=19;line(0,0,r,0,.86,3);dc.restore();
+  for(const b of blips){
+    const x=cx+b.x*r,y=cy+b.y*r;const alpha=.55+.45*Math.max(0,Math.cos(angle-Math.atan2(b.y,b.x)))**9;
+    dc.fillStyle=`rgba(255,255,255,${alpha})`;dc.shadowColor='white';dc.shadowBlur=15;
+    dc.beginPath();dc.arc(x,y,b.r,0,Math.PI*2);dc.fill();dc.shadowBlur=0;
+    dc.strokeStyle=`rgba(255,255,255,${alpha*.5})`;dc.strokeRect(x-17,y-17,34,34);
+  }
+  text('AZIMUTH  024.8°',57,73,25,.9);text('RANGE   160 KM',971,73,25,.78,'right');
+  text('5 CONTACTS DETECTED',58,720,21,.77);text('SCAN ACTIVE',971,720,21,.8,'right');
+}
+function system(t){
+  gridLines(64,.045);
+  text('SIGNAL MONITOR / LIVE TELEMETRY',50,67,28,.97);line(50,92,972,92,.56,2);
+  const metrics=[['BEAM CURRENT',Math.floor(82+6*Math.sin(t*.9))+' μA',.81],['ANODE VOLTAGE',(19.6+.3*Math.sin(t*.35)).toFixed(1)+' kV',.94],['PHOSPHOR DECAY','1.2 ms',.61],['FOCUS INDEX','98.4%',.98]];
+  metrics.forEach((m,i)=>{
+    const x=55+i%2*470,y=145+Math.floor(i/2)*184;
+    dc.strokeStyle='rgba(255,255,255,.27)';dc.strokeRect(x,y,442,152);
+    text(m[0],x+21,y+33,20,.65);text(m[1],x+20,y+88,43,.94);
+    dc.fillStyle='rgba(255,255,255,.13)';dc.fillRect(x+20,y+115,397,9);
+    dc.fillStyle='rgba(255,255,255,.72)';dc.fillRect(x+20,y+115,397*m[2],9);
+  });
+  line(55,557,970,557,.5);
+  text('ELECTRON PATH STABILITY',55,592,23,.71);
+  glowLine(()=>{for(let x=55;x<=970;x+=3){let y=664-32*Math.sin((x/58)+t*1.2)-8*Math.sin(x/11-t*2);if(x===55)dc.moveTo(x,y);else dc.lineTo(x,y);}},2,12);
+  text('NO ERRORS  |  DEVICE NOMINAL',55,739,19,.74);
+}
+function renderDisplay(t){
+  dc.fillStyle='rgba(0,0,0,.27)';dc.fillRect(0,0,CW,CH);
+  dc.save();dc.shadowColor='white';dc.shadowBlur=6;
+  if(state.mode==='terminal')terminal(t);
+  if(state.mode==='wave')waveform(t);
+  if(state.mode==='radar')radar(t);
+  if(state.mode==='system')system(t);
+  dc.restore();
+  // An occasional noisy horizontal synchronization glitch.
+  if(state.noise>.15&&Math.random()<state.noise*.10){const y=Math.random()*CH;dc.fillStyle=`rgba(255,255,255,${state.noise*.11})`;dc.fillRect(0,y,CW,3+Math.random()*10);}
+  tex.needsUpdate=true;
+}
+function resetSignal(){dc.fillStyle='#000';dc.fillRect(0,0,CW,CH);terminalStart=performance.now()/1000;tex.needsUpdate=true;}
+
+const clock=new THREE.Clock();let lastDraw=0;
+function frame(){
+  requestAnimationFrame(frame);
+  const delta=Math.min(clock.getDelta(),.1);
+  const elapsed=clock.elapsedTime;
+  const wanted=state.power?1:0;
+  state.powerValue=THREE.MathUtils.damp(state.powerValue,wanted,state.power?4.0:6.2,delta);
+  if(Math.abs(state.powerValue-wanted)<.0005)state.powerValue=wanted;
+  displayMaterial.uniforms.uTime.value=elapsed;
+  glassMaterial.uniforms.uTime.value=elapsed;
+  displayMaterial.uniforms.uPower.value=state.powerValue;
+  if(elapsed-lastDraw>1/28){
+    if(state.powerValue>.001)renderDisplay(performance.now()/1000);
+    lastDraw=elapsed;
+  }
+  screenLight.intensity=state.powerValue*(1.5+state.bloom*2.1)*(1+Math.sin(elapsed*49)*.008);
+  ledMat.color.set(state.power?0x91ffc1:0x353d3c);ledHalo.material.opacity=state.power?.15:.01;
+  dust.rotation.y=elapsed*.004;
+  controls.update();composer.render();
+}
+function resize(){
+  const w=Math.max(1,viewport.clientWidth),h=Math.max(1,viewport.clientHeight);
+  const aspect=w/h;
+  camera.aspect=aspect;
+  camera.fov=aspect<.8?52:aspect<1.3?43:37;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h,false);composer.setSize(w,h);
+}
+new ResizeObserver(resize).observe(viewport);resize();
+
+// === User controls: real parameter changes, no decorative inert knobs ===
+function updateColor(name){
+  state.color=name;const p=palettes[name];
+  displayMaterial.uniforms.uTint.value.setHex(p.color);
+  glassMaterial.uniforms.uTint.value.setHex(p.color);
+  screenLight.color.setHex(p.color);bounce.color.setHex(p.color);
+  document.documentElement.style.setProperty('--signal',p.css);
+  $('#color-name').textContent=p.label;$('#color-wave').textContent=p.wave;
+  document.querySelectorAll('[data-color]').forEach(b=>b.classList.toggle('active',b.dataset.color===name));
+}
+document.querySelectorAll('[data-color]').forEach(b=>b.addEventListener('click',()=>updateColor(b.dataset.color)));
+function updateMode(mode){
+  state.mode=mode;
+  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  resetSignal();
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>updateMode(b.dataset.mode)));
+for (const id of ['bloom','curvature','scanlines','noise']) {
+  const input=$('#'+id);
+  function apply(){
+    state[id]=Number(input.value)/100;
+    $('#'+id+'-value').textContent=input.value+'%';
+    input.style.setProperty('--fill',input.value+'%');
+    if(id==='bloom')bloomPass.strength=.20+state.bloom*1.55;
+    if(id==='curvature')updateGlassCurve();
+    if(id==='scanlines')displayMaterial.uniforms.uScanlines.value=state.scanlines;
+    if(id==='noise')displayMaterial.uniforms.uNoise.value=state.noise;
+  }
+  input.addEventListener('input',apply);apply();
+}
+const powerToggle=$('#power-toggle');
+function updatePower(power){
+  state.power=power;powerToggle.classList.toggle('on',power);
+  powerToggle.setAttribute('aria-checked',String(power));
+  $('#power-hint').textContent=power?'SYSTEM ONLINE':'STANDBY / OFF';
+  $('#system-status').textContent=power?'SIMULATION LIVE':'SYSTEM STANDBY';
+  document.querySelector('.pulse-dot').style.background=power?'var(--signal)':'#536660';
+  if(power)resetSignal();
+}
+powerToggle.addEventListener('click',()=>updatePower(!state.power));
+$('#randomize').addEventListener('click',()=>{
+  const modes=['terminal','wave','radar','system'],colors=['green','amber','cyan'];
+  updateMode(modes[Math.floor(Math.random()*modes.length)]);
+  updateColor(colors[Math.floor(Math.random()*colors.length)]);
+  for(const id of ['bloom','curvature','scanlines','noise']) {
+    const ranges={bloom:[45,100],curvature:[20,95],scanlines:[30,95],noise:[0,45]};
+    const el=$('#'+id);const [a,b]=ranges[id];el.value=Math.floor(a+Math.random()*(b-a));el.dispatchEvent(new Event('input'));
+  }
+  if(!state.power)updatePower(true);
+});
+function resetCamera(){camera.position.set(5.1,2.9,9.1);controls.target.set(0,-.04,0);controls.update();}
+$('#reset-camera').addEventListener('click',resetCamera);
+canvas.addEventListener('dblclick',resetCamera);
+const mobileButton=$('#mobile-controls-button');
+mobileButton.addEventListener('click',()=>{
+  const open=$('#control-panel').classList.toggle('open');
+  mobileButton.setAttribute('aria-expanded',String(open));
+  mobileButton.innerHTML=open?'✕ &nbsp; 关闭控制台':'⚙ &nbsp; 调整显示器';
+});
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('#control-panel').classList.contains('open'))mobileButton.click();
+  if(e.key.toLowerCase()==='r'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))resetCamera();
+});
+
+// The showcase is actually live once the first WebGL frame is rendered.
+try{
+  frame();
+  setTimeout(()=>loading.classList.add('hidden'),450);
+  window.__crtReady=true;
+}catch(e){loading.innerHTML='<span>WEBGL INITIALIZATION FAILED — '+String(e.message).replace(/[<>]/g,'')+'</span>';throw e;}
+
+</script>
+</body>
+</html>
