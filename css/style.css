@@ -35,6 +35,7 @@
 
 
 /* ART LAB — Acid Graphics gallery, scoped to art-poc.html. */
+.nav-cards-art{grid-template-columns:repeat(2,minmax(0,1fr))}
 .art-head{position:relative;overflow:hidden;padding-top:clamp(65px,9vw,120px);padding-bottom:65px}
 .art-head h1{position:relative;z-index:1;font-size:clamp(76px,13vw,170px);margin:15px 0 25px;letter-spacing:-.095em}
 .art-head h1 span{color:var(--acid)}
