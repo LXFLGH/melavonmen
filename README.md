@@ -2,7 +2,7 @@
 
 个人主页，托管于 GitHub Pages：https://lxflgh.github.io/melavonmen/
 
-纯静态站点，零外部依赖（无框架、无 CDN），手写 HTML/CSS。
+个人主页为纯静态 HTML/CSS，无框架、无 CDN；`experiments/phosphor-crt.html` 为独立的 Three.js WebGL 实验页，通过 CDN 加载 Three.js 模块与字体。
 
 ## 酸性设计（Acid Graphics）
 
@@ -23,6 +23,12 @@ posts/              文章（独立 HTML，命名 YYYY-MM-DD-标题.html）
 css/style.css       全站样式（heatmap.html 不使用）
 assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图）
 ```
+
+## Three.js CRT 实验
+
+- 主页 Hero 区的「CRT 荧光显示器 ↗」按钮链接到 `experiments/phosphor-crt.html`，GitHub Pages 地址为 `https://lxflgh.github.io/melavonmen/experiments/phosphor-crt.html`。
+- 页面内置 3D 显示器、球面玻璃、Bloom 泛光、扫描线、交互调参等效果，使用 Three.js ES Modules / jsDelivr CDN，访问者需要联网及支持 WebGL 的浏览器。
+- 该页面与主站 Acid Graphics 样式隔离，避免相互污染。修改本实验时不应无意改变首页与其他子页面。
 
 ## 页面约定
 
