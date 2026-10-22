@@ -2,12 +2,12 @@
 
 个人主页，托管于 GitHub Pages：https://lxflgh.github.io/melavonmen/
 
-个人主页为纯静态 HTML/CSS，无框架、无 CDN；`experiments/phosphor-crt.html` 为独立的 Three.js WebGL 实验页，通过 CDN 加载 Three.js 模块与字体。
+主页和艺术 POC 展厅为纯静态 HTML/CSS，无框架、无 CDN；展厅嵌入 `experiments/phosphor-crt.html?embed=1`，该 Three.js WebGL 实验页使用 CDN 加载 Three.js 模块与字体。
 
 ## 酸性设计（Acid Graphics）
 
 站点视觉采用荧光黄绿、工业黑、银灰、少量紫色，配合超大字重、硬边框、网格纹理与机械编号。
-- `css/style.css`：首页、作品、关于、文章的统一视觉系统。
+- `css/style.css`：首页、作品、艺术 POC 展厅、关于和文章的统一视觉系统。
 - `heatmap.html`：保留原统计数据和 JS 交互，仅在原有 `<style>` 末尾追加 ACID GRAPHICS 视觉覆盖层。由外部工具重生成时需要重新附加该视觉覆盖层。
 - 移动端响应式，支持 `prefers-reduced-motion`。
 
@@ -17,6 +17,8 @@
 ```
 index.html          首页（个人主页：入口卡片 + 文章列表）
 games.html          游戏作品（作品卡片 + FCN 实机截图 + 后续作品占位）
+art-poc.html        艺术 POC 展厅（Acid Graphics 风格，内嵌 CRT 交互页）
+experiments/phosphor-crt.html  Three.js CRT 显示器（可独立打开，也支持 ?embed=1 嵌入）
 heatmap.html        贡献热力图（自包含单页，保留 JS 数据逻辑，酸性主题内联）
 about.html          关于
 posts/              文章（独立 HTML，命名 YYYY-MM-DD-标题.html）
@@ -24,15 +26,18 @@ css/style.css       全站样式（heatmap.html 不使用）
 assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图）
 ```
 
-## Three.js CRT 实验
+## 艺术 POC 展厅与 Three.js CRT 实验
 
-- 主页 Hero 区的「CRT 荧光显示器 ↗」按钮链接到 `experiments/phosphor-crt.html`，GitHub Pages 地址为 `https://lxflgh.github.io/melavonmen/experiments/phosphor-crt.html`。
-- 页面内置 3D 显示器、球面玻璃、Bloom 泛光、扫描线、交互调参等效果，使用 Three.js ES Modules / jsDelivr CDN，访问者需要联网及支持 WebGL 的浏览器。
-- 该页面与主站 Acid Graphics 样式隔离，避免相互污染。修改本实验时不应无意改变首页与其他子页面。
+- 主页 Hero 区「艺术 POC ↗」按钮与艺术实验卡片均链接到 `art-poc.html`，地址为 `https://lxflgh.github.io/melavonmen/art-poc.html`。
+- 新增实验优先放在艺术 POC 展厅下，避免与游戏作品页混杂；展厅整体复用 `css/style.css` 的 Acid Graphics 设计（荧光黄绿、工业黑、硬边框、网格纹理）。
+- 第一号实验为 `experiments/phosphor-crt.html`，支持独立浏览（`https://lxflgh.github.io/melavonmen/experiments/phosphor-crt.html`）及 `?embed=1` 模式（展厅的 iframe 嵌入预览）。
+- CRT 模型包含球面玻璃、Bloom 泛光、扫描线、荧光余辉、动态信号与交互调参。实验页控制面板、导航和外围 UI 采用主站酸性设计，但显示器荧光粉颜色的绿/琥珀/青色选项保持原模拟特征。
+- Three.js ES Modules 及展示字体从外部 CDN 加载；首次打开需联网并使用支持 WebGL 的浏览器。
+
 
 ## 页面约定
 
-- 顶部导航顺序固定：首页 / 游戏 / 热力图 / 关于 / GitHub。
+- 顶部导航顺序：首页 / 游戏 / 艺术 POC / 热力图 / 关于 / GitHub（热力图保持自身的返回首页导航）。
 - 新增游戏作品：复制 `games.html` 里的 `<article class="game-card">` 整块，改标题、状态徽章、要点列表与 `meta-grid` 元信息；`nav-card is-placeholder` 是空位占位样式。
 - FCN 作品条目可通过 `games.html#fcn` 直达；截图区为 `games.html#fcn-screenshots`，关于页的 FCN 介绍链接到此处。
 - 截图使用原始 PNG，属于 2026-10-09 的 Windows Godot 历史实机画面，1200 × 760；按主页、农场、编辑器、任务、仓库、商店、股市、银行、手册、设置、剧情展示。截图不是 HTML demo，也不作为完整功能或动画验证的证据。
