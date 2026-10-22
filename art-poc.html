@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Melavonmen 艺术 POC 展厅：Three.js 交互式荧光 CRT 显示器，球面玻璃、泛光、扫描线与信号模拟。">
+<meta name="theme-color" content="#10110f">
+<title>艺术 POC / ART LAB · Melavonmen</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">Melavonmen</a>
+    <nav aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="games.html">游戏</a>
+      <a href="art-poc.html" class="active" aria-current="page">艺术 POC</a>
+      <a href="heatmap.html">热力图</a>
+      <a href="about.html">关于</a>
+      <a href="https://github.com/LXFLGH" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="page-head art-head">
+    <p class="eyebrow">MELAVONMEN / VISUAL EXPERIMENTS / 004</p>
+    <p class="lab-overline">INDEPENDENT ART &amp; RENDERING PROTOTYPES — EST. 2026</p>
+    <h1>艺术 <span>POC.</span></h1>
+    <p class="sub">不止是概念图。这里放可以在浏览器里直接触摸、旋转、调参的视觉实验。<br>从真实的计算机图形学效果出发，把奇怪的想法变成可运行的作品。</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="#phosphor">进入实验 001 ↗</a>
+      <a class="btn" href="index.html">← 返回首页</a>
+    </div>
+    <div class="lab-hero-decor" aria-hidden="true">✳</div>
+  </section>
+
+  <section class="lab-feature" id="phosphor" aria-labelledby="phosphor-title">
+    <div class="lab-feature-topline">
+      <span><i aria-hidden="true"></i> EXPERIMENT 001 / LIVE WEBGL</span>
+      <span>THREE.JS · INTERACTIVE · CRT SIMULATION</span>
+    </div>
+    <div class="lab-feature-title">
+      <div>
+        <p class="lab-subtitle">PHOSPHOR / HARDWARE STUDY</p>
+        <h2 id="phosphor-title">光有记忆<span class="lab-title-star">✳</span></h2>
+        <p>PHOSPHOR / LAB — 用球面屏幕、动态荧光、扫描线与 Bloom 还原一台复古 CRT 显示器。</p>
+      </div>
+      <div class="lab-number" aria-hidden="true">01<span>/ 01</span></div>
+    </div>
+    <div class="lab-tags" aria-label="技术标签">
+      <span>CURVED GLASS</span><span>PHOSPHOR GLOW</span><span>BLOOM</span><span>SCANLINES</span><span>WEBGL</span>
+    </div>
+    <div class="lab-preview" aria-label="CRT 实时实验嵌入区域">
+      <div class="lab-preview-toolbar">
+        <span class="lab-led" aria-hidden="true"></span>
+        <span>LIVE / INTERACTIVE VIEWPORT</span>
+        <span class="lab-preview-toolbar-right">DRAG TO ORBIT · SCROLL TO ZOOM</span>
+        <a href="experiments/phosphor-crt.html" target="_blank" rel="noopener noreferrer">独立窗口打开 ↗</a>
+      </div>
+      <iframe
+        title="PHOSPHOR LAB — 可交互的 Three.js CRT 荧光显示器"
+        src="experiments/phosphor-crt.html?embed=1"
+        loading="lazy"
+        allow="fullscreen"
+        allowfullscreen
+      ></iframe>
+    </div>
+    <div class="lab-feature-foot">
+      <div>
+        <strong>真实交互，不是视频。</strong>
+        <p>拖动旋转显示器，切换终端、波形、雷达和遥测信号；还能调整玻璃曲率、泛光、扫描线、信号噪声与荧光粉颜色。</p>
+      </div>
+      <a class="btn btn-primary" href="experiments/phosphor-crt.html">完整实验 / FULL VIEW ↗</a>
+    </div>
+    <p class="lab-runtime-note">运行要求：支持 WebGL 的现代浏览器；Three.js 模块从 CDN 加载，首次访问需要网络连接。移动设备建议使用完整实验页面操作。</p>
+  </section>
+
+  <section class="lab-index" aria-label="实验索引">
+    <h2 class="list-title">INDEX / VISUAL LABORATORY</h2>
+    <div class="lab-index-row"><span>001</span><strong>PHOSPHOR / LAB</strong><span>CRT / 3D / REALTIME</span><a href="#phosphor">查看作品 ↗</a></div>
+    <p class="empty-note">这里专门收纳艺术和渲染 POC，与游戏作品页分开管理；新的可交互实验可以继续追加到此页面。</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>© 2026 Melavonmen · ART LAB / EXPERIMENTAL WORKS · <a href="index.html">返回首页 ↑</a></p></div>
+</footer>
+</body>
+</html>
