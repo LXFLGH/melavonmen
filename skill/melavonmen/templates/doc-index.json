@@ -1,0 +1,18 @@
+{
+  "schema_version": "melavonmen.doc/1",
+  "project": "<project-id>",
+  "source_revision": null,
+  "manifest": {
+    "project": "project.json",
+    "requirements": "requirements.json",
+    "modules": [{"id": "<module-id>", "path": "modules/<module-id>.json"}],
+    "contracts": [{"id": "<contract-id>", "path": "contracts/<contract-id>.json"}],
+    "decisions": [],
+    "changes": [],
+    "verification": "verification/index.json"
+  },
+  "task_routes": [
+    {"task": "<task-id>", "read": ["project.json", "contracts/<contract-id>.json", "modules/<module-id>.json"]}
+  ],
+  "unresolved": []
+}

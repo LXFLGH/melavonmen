@@ -1,0 +1,21 @@
+{
+  "schema_version": "melavonmen.assets/1",
+  "project": "<project-id>",
+  "root": "assets",
+  "assets": [
+    {
+      "id": "<asset-id>",
+      "path": "<category>/<name>.png",
+      "kind": "texture",
+      "sprites": 1,
+      "width": 64,
+      "height": 64,
+      "alpha": true,
+      "sha256": "<64 hex>",
+      "source": "ai-generated",
+      "generated_by": "<tool>",
+      "prompt": "<actual prompt used>",
+      "used_by": ["<path/to/consumer>"]
+    }
+  ]
+}

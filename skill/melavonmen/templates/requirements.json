@@ -1,0 +1,13 @@
+{
+  "schema_version": "melavonmen.requirements/1",
+  "mode": "doc_then_execute",
+  "normalized_prompt": "<normalized user request, no invented decisions>",
+  "requirements": [
+    {"id": "R-001", "priority": "must", "statement": "<expected behavior>", "source": "user", "acceptance": ["<testable criterion>"]}
+  ],
+  "issues": [
+    {"id": "Q-001", "type": "ambiguous", "evidence": "<original phrase>", "impact": "<architecture or behavior>", "blocking": true, "options": [], "question": "<ask user>", "resolution": null}
+  ],
+  "assumptions": [],
+  "acceptance": []
+}

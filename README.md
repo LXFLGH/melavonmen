@@ -59,3 +59,12 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 - Artless：当前仓库是黑白线稿地牢、卡牌与手绘卡牌技术原型；商旅/动态经济是游戏构想，不应写作已实现。
 - 飞跃幻想乡：当前仓库已有 HD-2D 城镇漫游和分区加载原型；魔理沙扫帚飞行与完整探索游戏尚未由现有 README 证实。
 - 开发日志保留其历史时间背景。要修改进度信息时一并检查首页、关于页、游戏页和本说明，修改截图时另核对实际图片与采集时间。
+
+## melavonmen Skill 归档（2026-10-30）
+
+Agent Work Stream skill 的发布归档，与站点页面解耦，纯静态文件，不参与首页/作品页渲染。
+
+- `skill/melavonmen/`：可直接覆盖安装的 skill 包（`SKILL.md` + `references/` + `scripts/` + `templates/`），包内语义版本 **2.3.1**。
+- `downloads/melavonmen-alpha0.1.8.1.zip`：同一份内容的归档包（由 `git archive alpha0.1.8.1` 生成，不含 `.git`），44,187 字节，sha256 `1fdb15aeb047d0dd58a556cb03f471ad80e430a090fe6c556439687d830d3f38`。
+- 安装：解压后覆盖到 `~/.workbuddy/skills/melavonmen/`；校验器仅需 Python 3.10+ 标准库，自测 `python -m unittest discover -s scripts/tests`。
+- 版本口径：`alpha0.1.8.1` 是归档发布序号，skill 自身语义版本取 `SKILL.md` 的 `version` 字段，两者不互相覆盖；更新 skill 时同时更新 zip 与本段说明。

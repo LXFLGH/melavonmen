@@ -1,0 +1,18 @@
+{
+  "schema_version": "melavonmen.wiki/1",
+  "project": "<project-id>",
+  "source_revision": null,
+  "loc_scope": {"include": "tracked first-party physical source lines including tests", "exclude": ["vendor", "generated", "build", "assets", "locks"]},
+  "loc_total": null,
+  "total_sources": 1,
+  "indexed_sources": 1,
+  "deep_sources": 0,
+  "sources": [
+    {"path": "src/<source-file>", "sha256": "<64-char-real-sha256>", "module_id": "<module-id>", "coverage": "indexed"}
+  ],
+  "modules": [{"id": "<module-id>", "index": "<module-id>/index.json"}],
+  "task_routes": [{"task": "<task-id>", "read": ["<module-id>/index.json"]}],
+  "symbol_routes": [],
+  "generated_or_verified_at": null,
+  "unresolved": []
+}
