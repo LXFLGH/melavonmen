@@ -172,10 +172,10 @@ html.embed-mode,html.embed-mode body{height:100%;min-height:100%}
         </section>
         <section class="panel-section controls-section">
           <div class="panel-section-head"><span>03 / CALIBRATION</span><span class="panel-hint">ANALOG</span></div>
-          <label class="range-head" for="bloom"><span>PHOSPHOR BLOOM</span><output id="bloom-value">75%</output></label>
-          <input id="bloom" class="range" type="range" min="0" max="100" value="75" />
-          <label class="range-head" for="curvature"><span>GLASS CURVATURE</span><output id="curvature-value">68%</output></label>
-          <input id="curvature" class="range" type="range" min="0" max="100" value="68" />
+          <label class="range-head" for="bloom"><span>PHOSPHOR BLOOM</span><output id="bloom-value">35%</output></label>
+          <input id="bloom" class="range" type="range" min="0" max="100" value="35" />
+          <label class="range-head" for="curvature"><span>GLASS CURVATURE</span><output id="curvature-value">9%</output></label>
+          <input id="curvature" class="range" type="range" min="0" max="100" value="9" />
           <label class="range-head" for="scanlines"><span>SCANLINE DENSITY</span><output id="scanlines-value">65%</output></label>
           <input id="scanlines" class="range" type="range" min="0" max="100" value="65" />
           <label class="range-head" for="noise"><span>SIGNAL INTERFERENCE</span><output id="noise-value">12%</output></label>
@@ -222,9 +222,13 @@ const palettes = {
   amber: { color: 0xffb867, css: '#ffc57c', label: 'P3 AMBER', wave: 'λ 590 nm' },
   cyan:  { color: 0x79e8ff, css: '#a9f0ff', label: 'P22 CYAN', wave: 'λ 495 nm' },
 };
+// Calibration defaults live in the sliders only (single source); state mirrors them on boot.
+const sliderValue = id => Number(document.getElementById(id).value) / 100;
 const state = {
-  mode: 'terminal', color: 'green', bloom: .75, curvature: .68,
-  scanlines: .65, noise: .12, power: true, powerValue: 1, lastInteraction: 0,
+  mode: 'terminal', color: 'green',
+  bloom: sliderValue('bloom'), curvature: sliderValue('curvature'),
+  scanlines: sliderValue('scanlines'), noise: sliderValue('noise'),
+  power: true, powerValue: 1, lastInteraction: 0,
 };
 
 const scene = new THREE.Scene();
@@ -239,7 +243,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.27;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(1,1), 1.1, .68, .45);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(1,1), .20 + state.bloom * 1.55, .68, .45);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
 const controls = new OrbitControls(camera, canvas);
