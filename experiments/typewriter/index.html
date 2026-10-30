@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed-mode');</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>墙上的打字机 · Vintage Typewriter</title>
+<style>
+  :root{
+    --ink:#171310;
+    --brass:#a8834e;
+    --brass-lt:#d8bc8a;
+    --paper:#faf4e9;
+    --text:#2c2419;
+    --muted:#6d6153;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--ink);
+    font-family:"Georgia","Songti SC","Times New Roman",serif;
+    color:var(--text);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block;}
+  .vig{
+    position:fixed;inset:0;pointer-events:none;z-index:2;
+    background:radial-gradient(125% 95% at 46% 40%,rgba(0,0,0,0) 38%,rgba(28,18,8,.30) 82%,rgba(18,10,4,.55) 100%);
+    mix-blend-mode:multiply;
+  }
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.055;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- 右侧面板 ---------- */
+  .panel{
+    position:fixed;z-index:6;
+    right:clamp(18px,2.6vw,46px);top:50%;transform:translateY(-50%);
+    width:min(342px,84vw);
+    padding:26px 26px 22px;
+    border-radius:4px;
+    background:linear-gradient(168deg,rgba(250,244,233,.93),rgba(243,234,219,.90));
+    border:1px solid rgba(120,92,58,.28);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.6) inset,
+      0 24px 60px -22px rgba(20,12,4,.55),
+      0 2px 8px rgba(20,12,4,.18);
+    backdrop-filter:blur(9px) saturate(1.05);
+  }
+  .panel:before{
+    content:"";position:absolute;inset:5px;border:1px solid rgba(160,130,88,.22);
+    border-radius:2px;pointer-events:none;
+  }
+  .eyebrow{
+    display:flex;align-items:center;gap:8px;
+    font-family:"Courier New",ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--brass);margin-bottom:14px;
+  }
+  .eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--brass);opacity:.8;}
+  h1{
+    font-size:25px;line-height:1.28;margin:0 0 10px;font-weight:600;
+    letter-spacing:.02em;color:#231c14;
+  }
+  .lede{
+    font-size:12.6px;line-height:1.78;color:var(--muted);margin:0 0 18px;
+    font-family:"Songti SC","Georgia",serif;
+  }
+  .meta{
+    display:grid;grid-template-columns:1fr;gap:0;
+    border-top:1px solid rgba(140,110,72,.22);
+    margin-bottom:16px;
+  }
+  .meta div{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid rgba(140,110,72,.14);
+    font-family:"Courier New",ui-monospace,monospace;font-size:11px;
+  }
+  .meta span{color:#8a7c69;letter-spacing:.08em;}
+  .meta b{font-weight:600;color:#3a3025;letter-spacing:.03em;}
+
+  .statusbar{
+    display:flex;align-items:center;gap:9px;margin-bottom:14px;
+    font-family:"Courier New",ui-monospace,monospace;font-size:11.5px;color:#4a3f31;
+  }
+  .led{
+    width:7px;height:7px;border-radius:50%;background:#8e9a7a;
+    box-shadow:0 0 0 3px rgba(142,154,122,.18);
+    transition:background .25s,box-shadow .25s;
+  }
+  .led.busy{background:#c08a3e;box-shadow:0 0 0 3px rgba(192,138,62,.22);animation:pulse 1.05s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+  .statusbar .lines{margin-left:auto;color:#8a7c69;letter-spacing:.06em;}
+  .statusbar .lines i{font-style:normal;color:#3a3025;font-weight:700;}
+
+  .btn{
+    width:100%;appearance:none;border:0;cursor:pointer;
+    padding:13px 16px;border-radius:2px;
+    font-family:"Courier New",ui-monospace,monospace;
+    font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+    color:#2a2116;
+    background:linear-gradient(180deg,#e2c795 0%,#c9a56c 48%,#b3894f 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.55) inset,
+      0 -1px 0 rgba(90,62,26,.35) inset,
+      0 6px 14px -6px rgba(90,62,26,.55);
+    transition:transform .12s ease,box-shadow .18s ease,filter .18s ease;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px);}
+  .btn:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 2px 6px -3px rgba(90,62,26,.5);}
+  .btn:disabled{cursor:default;filter:saturate(.55) brightness(.96);opacity:.72;}
+  .tip{
+    margin:12px 0 0;font-size:11px;line-height:1.65;color:#8a7c69;
+    font-family:"Courier New",ui-monospace,monospace;letter-spacing:.02em;
+  }
+  .tip code{color:#5d4a30;background:rgba(160,130,88,.14);padding:1px 4px;border-radius:2px;}
+
+  .caption{
+    position:fixed;left:clamp(18px,2.6vw,44px);bottom:26px;z-index:6;
+    font-family:"Courier New",ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(240,225,200,.42);
+    pointer-events:none;
+  }
+  .caption b{color:rgba(240,225,200,.68);font-weight:400;}
+
+  @media (max-width:820px){
+    .panel{
+      right:12px;left:12px;top:auto;bottom:12px;transform:none;
+      width:auto;padding:18px 18px 16px;
+    }
+    .panel h1{font-size:20px;}
+    .lede{display:none;}
+    .meta{grid-template-columns:repeat(3,1fr);gap:8px;}
+    .meta div{flex-direction:column;gap:3px;border-bottom:0;padding:4px 0;font-size:10px;}
+    .statusbar{margin-bottom:10px;}
+    .tip{margin-top:9px;font-size:10px;}
+    .caption{display:none;}
+  }
+  @media (max-height:560px){
+    .lede,.meta{display:none;}
+    .panel{padding:16px;}
+    .panel h1{font-size:19px;margin-bottom:8px;}
+  }
+</style>
+<style id="site-chrome">
+/* MELAVONMEN SITE CHROME — ACID GRAPHICS (2026)
+   Only the surrounding frame is styled here; the artwork inside stays untouched. */
+:root{--site-bar-h:38px;--acid:#dcff46;--violet:#b49bff;--ink:#f2f3e9}
+.site-bar{position:fixed;inset:0 0 auto 0;height:var(--site-bar-h);z-index:2147483000;
+  display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:rgba(16,17,15,.94);border-bottom:2px solid var(--acid);
+  font:700 10px/1.2 "Courier New",ui-monospace,monospace;letter-spacing:.14em;color:var(--acid);
+  backdrop-filter:blur(10px);transform:translateY(0);opacity:1;
+  transition:transform .26s ease,opacity .26s ease}
+.site-bar a{color:var(--acid);text-decoration:none;white-space:nowrap}
+.site-bar a:hover{color:var(--violet)}
+.site-bar .bar-mark{font:900 13px/1 Arial,sans-serif;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink)}
+.site-bar .bar-mark b{color:var(--acid)}
+.site-bar .bar-id{border:1px solid #647536;padding:3px 6px;color:var(--acid)}
+.site-bar .bar-sep{color:#555a4e}
+.site-bar .bar-name{color:var(--muted,#aeb2a4);letter-spacing:.1em}
+.site-bar .bar-right{margin-left:auto;display:flex;align-items:center;gap:14px;color:#aeb2a4}
+.site-bar.is-hidden{transform:translateY(-100%);opacity:0;pointer-events:none}
+.site-bar:focus-within{transform:none;opacity:1;pointer-events:auto}
+html.embed-mode .site-bar{display:none!important}
+@media(max-width:640px){.site-bar{font-size:9px;gap:8px;padding:0 10px}.site-bar .bar-mark{display:none}.site-bar .bar-name{display:none}}
+@media(prefers-reduced-motion:reduce){.site-bar{transition:none}}
+</style>
+</head>
+<body>
+<div class="site-bar" id="site-bar" role="navigation" aria-label="Melavonmen 站点导航">
+  <a class="bar-mark" href="../../index.html">✳ Mela<b>vonmen</b></a>
+  <span class="bar-id">EXP 002</span>
+  <span class="bar-sep">/</span>
+  <span class="bar-name">TYPEWRITER</span>
+  <span class="bar-right">
+    <a href="../../art-poc.html#lab-index">← ART LAB</a>
+    <a href="../../art-poc.html#typewriter">展厅条目 ↗</a>
+  </span>
+</div>
+
+<canvas id="scene"></canvas>
+<div class="vig"></div>
+<div class="grain"></div>
+
+<aside class="panel">
+  <div class="eyebrow"><span class="dot"></span>Typewriter · No.&nbsp;5</div>
+  <h1>墙上的打字机</h1>
+  <p class="lede">搪瓷铸铁机身、硬橡胶滚筒、上打式键杆篮。纸从滚筒上垂下来，像一段还没写完的话。</p>
+  <div class="meta">
+    <div><span>机身</span><b>黑搪瓷 · 金线</b></div>
+    <div><span>滚筒</span><b>硬橡胶 ⌀33</b></div>
+    <div><span>色带</span><b>棉质 · 双轮</b></div>
+  </div>
+  <div class="statusbar">
+    <span class="led" id="led"></span>
+    <span id="statusText">待机</span>
+    <span class="lines"><i id="lineCount">0</i> 行</span>
+  </div>
+  <button id="testBtn" class="btn">测试打字</button>
+  <p class="tip">点击后逐字敲出 <code>hello world</code>，整行结束纸带自动下移一行。</p>
+</aside>
+
+<div class="caption"><b>1890 — 1950</b> · 机械打字机 / three.js 实时</div>
+
+<script src="three.min.js"></script>
+<script>
+"use strict";
+(function () {
+  const T = THREE;
+  // r149 默认 legacy 色彩模式，关闭后十六进制颜色按 sRGB 解释（暗部才够黑）
+  if (T.ColorManagement) T.ColorManagement.legacyMode = false;
+
+  /* ==================================================================
+     0. 常量与配置
+     ================================================================== */
+  const PL = { y: 0.163, z: -0.021, r: 0.033, len: 0.292 };   // 滚筒
+  const PAPER_W = 0.150;
+  const PAPER_LEN = 1.30;                                    // 整条纸带长度
+  const WRAP = Math.PI * 0.5 * PL.r;                         // 绕过滚筒的弧长
+  const PXW = 384;                                           // 纸面画布宽（px）
+  const PXPM = PXW / PAPER_W;                                // 像素每米 = 2560，与纸宽严格对应
+  const PXH = Math.round(PAPER_LEN * PXPM);
+  const FONT = 30, LH = 72;                                   // 字高 / 行距（px）
+  const TEST_TEXT = "hello world";
+  const FONT_STYLE = '600 ' + FONT + 'px "Courier New", "Consolas", monospace';
+  const _measure = document.createElement("canvas").getContext("2d");
+  _measure.font = FONT_STYLE;
+  const ADV = Math.max(10, Math.round(_measure.measureText("M").width));   // 实测字距
+  const LINE0_BASE = Math.round(WRAP * PXPM + FONT * 1.03);   // 第一行基线（完全落在下垂段内）
+  const TEXT_L = PXW / 2 - ((TEST_TEXT.length - 1) / 2) * ADV;
+  const TEXT_C = TEXT_L + ADV / 2;
+
+  const Q = new URLSearchParams(location.search);
+
+  const el = {
+    canvas: document.getElementById("scene"),
+    btn: document.getElementById("testBtn"),
+    status: document.getElementById("statusText"),
+    led: document.getElementById("led"),
+    count: document.getElementById("lineCount"),
+  };
+
+  /* ==================================================================
+     1. 渲染器 / 场景 / 相机
+     ================================================================== */
+  const renderer = new T.WebGLRenderer({ canvas: el.canvas, antialias: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.toneMapping = T.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.80;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+
+  const scene = new T.Scene();
+  scene.background = new T.Color(0x14100c);
+
+  const camera = new T.PerspectiveCamera(31, 1, 0.05, 80);
+
+  /* ---------- 环境贴图（程序化小房间，给金属反射用） ---------- */
+  (function buildEnv() {
+    const env = new T.Scene();
+    const room = new T.Mesh(
+      new T.BoxGeometry(12, 8, 12),
+      new T.MeshBasicMaterial({ color: new T.Color(0.20, 0.18, 0.16), side: T.BackSide })
+    );
+    env.add(room);
+
+    const plate = (w, h, rgb, pos, rot) => {
+      const m = new T.Mesh(
+        new T.PlaneGeometry(w, h),
+        new T.MeshBasicMaterial({ color: new T.Color(rgb[0], rgb[1], rgb[2]), side: T.DoubleSide })
+      );
+      m.position.set(pos[0], pos[1], pos[2]);
+      if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
+      env.add(m);
+      return m;
+    };
+    plate(5.0, 4.0, [1.45, 1.30, 1.08], [0, 3.9, 0], [Math.PI / 2, 0, 0]);      // 顶光
+    plate(3.2, 4.6, [1.30, 1.20, 1.02], [-5.8, 1.4, 0.6], [0, Math.PI / 2, 0]); // 左窗
+    plate(2.4, 3.0, [0.30, 0.52, 0.33], [4.2, 1.0, 2.2], [0, -Math.PI / 2, 0]);// 右侧冷光
+    plate(2.0, 2.0, [1.30, 0.66, 0.28], [2.4, 2.6, -5.6], [0, 0, 0]);            // 背后暖点
+
+    const pmrem = new T.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const rt = pmrem.fromScene(env, 0.02);
+    scene.environment = rt.texture;
+    pmrem.dispose();
+  })();
+
+  /* ==================================================================
+     2. 灯光
+     ================================================================== */
+  const key = new T.SpotLight(0xffeecf, 4.2, 0, 0.30, 0.62, 0);
+  key.position.set(0.95, 2.30, 1.85);
+  key.target.position.set(-0.02, 0.92, 0.14);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.near = 0.8;
+  key.shadow.camera.far = 5.2;
+  key.shadow.bias = -0.00035;
+  key.shadow.normalBias = 0.016;
+  key.shadow.radius = 3;
+  key.shadow.focus = 1.0;
+  scene.add(key, key.target);
+
+  const fill = new T.DirectionalLight(0xa8c2e4, 0.16);
+  fill.position.set(-1.9, 1.05, 1.5);
+  scene.add(fill);
+
+
+
+  const rim = new T.DirectionalLight(0xffd9a8, 0.55);
+  rim.position.set(-1.5, 1.45, 0.55);
+  scene.add(rim);
+
+  const bounce = new T.DirectionalLight(0xffd3a6, 0.75);
+  bounce.position.set(0.15, 0.05, 1.6);
+  bounce.target.position.set(0, 1.0, 0.3);
+  scene.add(bounce, bounce.target);
+
+  const amb = new T.HemisphereLight(0xffeedd, 0x2a2018, 0.10);
+  scene.add(amb);
+
+  /* ==================================================================
+     3. 材质
+     ================================================================== */
+  const MAT = {
+    enamel: new T.MeshPhysicalMaterial({
+      color: 0x191b22, roughness: 0.33, metalness: 0.22,
+      clearcoat: 0.55, clearcoatRoughness: 0.18,
+      envMapIntensity: 0.55,
+    }),
+    enamelSoft: new T.MeshPhysicalMaterial({
+      color: 0x1d1f26, roughness: 0.40, metalness: 0.18,
+      clearcoat: 0.45, clearcoatRoughness: 0.26,
+      envMapIntensity: 0.5,
+    }),
+    brass: new T.MeshStandardMaterial({ color: 0xb98d47, roughness: 0.26, metalness: 1.0, envMapIntensity: 0.95 }),
+    brassDark: new T.MeshStandardMaterial({ color: 0x7b5c30, roughness: 0.44, metalness: 1.0, envMapIntensity: 0.75 }),
+    chrome: new T.MeshStandardMaterial({ color: 0xc6c9cf, roughness: 0.14, metalness: 1.0, envMapIntensity: 0.95 }),
+    steel: new T.MeshStandardMaterial({ color: 0x878d94, roughness: 0.40, metalness: 1.0, envMapIntensity: 0.55 }),
+    rubber: new T.MeshStandardMaterial({ color: 0x141110, roughness: 0.80, metalness: 0.05, envMapIntensity: 0.40 }),
+    rubberSoft: new T.MeshStandardMaterial({ color: 0x1b1917, roughness: 0.90, metalness: 0.03, envMapIntensity: 0.3 }),
+    ribbon: new T.MeshStandardMaterial({ color: 0x2a0c0b, roughness: 0.90, metalness: 0.0, envMapIntensity: 0.15, side: T.DoubleSide }),
+    ink: new T.MeshStandardMaterial({ color: 0x0a0908, roughness: 0.7, metalness: 0.2 }),
+  };
+
+  /* ==================================================================
+     4. 几何工具
+     ================================================================== */
+  function roundedRectShape(w, h, r) {
+    const s = new T.Shape();
+    const x = -w / 2, y = -h / 2;
+    r = Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4);
+    s.moveTo(x + r, y);
+    s.lineTo(x + w - r, y);
+    s.quadraticCurveTo(x + w, y, x + w, y + r);
+    s.lineTo(x + w, y + h - r);
+    s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h);
+    s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r);
+    s.quadraticCurveTo(x, y, x + r, y);
+    return s;
+  }
+
+  function roundedBox(w, h, d, r, seg) {
+    seg = seg || 6;
+    const b = Math.min(r * 0.8, d * 0.3, w * 0.24, h * 0.24);
+    const shape = roundedRectShape(w - 2 * b, h - 2 * b, Math.max(0.0015, r - b));
+    const geo = new T.ExtrudeGeometry(shape, {
+      depth: Math.max(0.0008, d - 2 * b), bevelEnabled: true,
+      bevelSize: b, bevelThickness: b, bevelSegments: 4, curveSegments: seg,
+    });
+    geo.translate(0, 0, -(d / 2) + b);
+    return geo;
+  }
+
+  // 侧面轮廓（[z,y] 点列）沿 X 方向拉伸
+  function profileGeo(pts, width, bevel, seg, holes) {
+    bevel = bevel === undefined ? 0.005 : bevel;
+    const shape = new T.Shape(pts.map(p => new T.Vector2(p[0], p[1])));
+    if (holes) {
+      holes.forEach(function (h) {
+        shape.holes.push(new T.Path(h.map(function (p) { return new T.Vector2(p[0], p[1]); })));
+      });
+    }
+    const geo = new T.ExtrudeGeometry(shape, {
+      depth: Math.max(0.001, width - 2 * bevel), bevelEnabled: true,
+      bevelSize: bevel, bevelThickness: bevel, bevelSegments: 3,
+      curveSegments: seg || 10,
+    });
+    geo.translate(0, 0, -(width / 2 - bevel));
+    geo.rotateY(-Math.PI / 2);
+    return geo;
+  }
+
+  function mesh(geo, mat, parent, pos, rot) {
+    const m = new T.Mesh(geo, mat);
+    if (pos) m.position.set(pos[0], pos[1], pos[2]);
+    if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    if (parent) parent.add(m);
+    return m;
+  }
+
+  function tube(points, radius, mat, parent, radial) {
+    const curve = new T.CatmullRomCurve3(points);
+    const geo = new T.TubeGeometry(curve, 48, radius, radial || 8, false);
+    return mesh(geo, mat, parent);
+  }
+
+  /* ==================================================================
+     5. 墙面
+     ================================================================== */
+  function makeWallTexture() {
+    const S = 1024;
+    const c = document.createElement("canvas");
+    c.width = c.height = S;
+    const g = c.getContext("2d");
+    g.fillStyle = "#c7b49a";
+    g.fillRect(0, 0, S, S);
+
+    // 大块斑驳
+    for (let i = 0; i < 90; i++) {
+      const x = Math.random() * S, y = Math.random() * S, r = 60 + Math.random() * 240;
+      const grd = g.createRadialGradient(x, y, 0, x, y, r);
+      const a = 0.018 + Math.random() * 0.03;
+      const tone = Math.random() > 0.5 ? "255,248,236" : "126,104,78";
+      grd.addColorStop(0, "rgba(" + tone + "," + a + ")");
+      grd.addColorStop(1, "rgba(" + tone + ",0)");
+      g.fillStyle = grd;
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // 细竖纹（旧壁纸的织纹）
+    for (let x = 0; x < S; x += 3) {
+      g.fillStyle = "rgba(90,72,52," + (0.012 + Math.random() * 0.014) + ")";
+      g.fillRect(x, 0, 1, S);
+    }
+    // 颗粒
+    const img = g.getImageData(0, 0, S, S);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (Math.random() - 0.5) * 15;
+      d[i] += n; d[i + 1] += n; d[i + 2] += n;
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+
+  (function buildWall() {
+    const tex = new T.CanvasTexture(makeWallTexture());
+    tex.wrapS = tex.wrapT = T.RepeatWrapping;
+    tex.repeat.set(2.2, 1.9);
+    tex.encoding = T.sRGBEncoding;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const mat = new T.MeshStandardMaterial({
+      map: tex, color: 0xcbb394, roughness: 0.95, metalness: 0.0, envMapIntensity: 0.22,
+    });
+    const wall = new T.Mesh(new T.PlaneGeometry(9, 6.4), mat);
+    wall.position.set(0, 0.55, 0);
+    wall.receiveShadow = true;
+    scene.add(wall);
+  })();
+
+  /* ==================================================================
+     6. 打字机
+     —— 依据 1890-1930 年上打式铸铁机：黑搪瓷 + 金线、硬橡胶滚筒、
+        圆形键杆篮、双色带盘、压纸杆、回车扳手。
+        机身压得很低（键盘位留空），滚筒与纸带成为主体。
+     ================================================================== */
+  const machine = new T.Group();
+  machine.position.set(0, 1.00, 0.30);
+  scene.add(machine);
+
+  const CX = 0.170;          // 侧架中心
+  const CT = 0.024;          // 侧架厚度
+
+  /* ---- 6.1 底座 ---- */
+  mesh(roundedBox(0.354, 0.024, 0.268, 0.009), MAT.enamel, machine, [0, 0.012, -0.128]);
+  (function baseLines() {
+    const l = new T.Mesh(new T.BoxGeometry(0.348, 0.0010, 0.0009), MAT.brass);
+    l.position.set(0, 0.0233, 0.0068);
+    machine.add(l);
+    [-1, 1].forEach(function (s) {
+      const l2 = new T.Mesh(new T.BoxGeometry(0.0009, 0.0010, 0.258), MAT.brass);
+      l2.position.set(s * 0.1745, 0.0233, -0.126);
+      machine.add(l2);
+    });
+  })();
+
+  /* ---- 6.2 侧机架 ---- */
+  // 前段压成低"鞍座"：滚筒与字车端板横移时从鞍面上方滑过，不再插进侧架
+  const cheekPts = [
+    [0.014, 0.024], [0.019, 0.052], [0.018, 0.080], [0.014, 0.104],
+    [0.010, 0.118],                        // 鞍面前缘
+    [-0.044, 0.120],                       // 鞍面（滚筒端与旋钮扫掠的下边界）
+    [-0.060, 0.134], [-0.072, 0.152], [-0.086, 0.166], [-0.102, 0.173],
+    [-0.140, 0.174], [-0.176, 0.170], [-0.206, 0.159], [-0.228, 0.143],
+    [-0.242, 0.121], [-0.246, 0.092], [-0.246, 0.024],
+  ];
+  const cheekHole = [
+    [-0.020, 0.050], [-0.030, 0.074], [-0.048, 0.092], [-0.074, 0.101],
+    [-0.110, 0.104], [-0.144, 0.100], [-0.172, 0.090], [-0.190, 0.074],
+    [-0.196, 0.058], [-0.188, 0.044], [-0.164, 0.034], [-0.108, 0.030],
+    [-0.052, 0.033], [-0.028, 0.040],
+  ];
+  [-1, 1].forEach(function (s) {
+    mesh(profileGeo(cheekPts, CT, 0.005, 12, [cheekHole]), MAT.enamel, machine, [s * CX, 0, 0]);
+
+    // 金线镶边（沿轮廓内法线恒定内缩，避免形状变化后越界）
+    let cz = 0, cy = 0;
+    cheekPts.forEach(function (p) { cz += p[0]; cy += p[1]; });
+    cz /= cheekPts.length; cy /= cheekPts.length;
+    const NP = cheekPts.length, INSET = 0.0032;
+    const outline = cheekPts.map(function (p, i) {
+      const a = cheekPts[(i - 1 + NP) % NP], b = cheekPts[(i + 1) % NP];
+      let tx = b[0] - a[0], ty = b[1] - a[1];
+      const len = Math.hypot(tx, ty) || 1;
+      tx /= len; ty /= len;
+      let nx = -ty, ny = tx;
+      if ((cz - p[0]) * nx + (cy - p[1]) * ny < 0) { nx = -nx; ny = -ny; }
+      return new T.Vector3(s * (CX + CT / 2 + 0.0005), p[1] + ny * INSET, p[0] + nx * INSET);
+    });
+    const geo = new T.TubeGeometry(new T.CatmullRomCurve3(outline, true), 180, 0.00055, 5, true);
+    machine.add(new T.Mesh(geo, MAT.brass));
+  });
+
+  /* ---- 6.3 机身前部（低矮的铸铁"胸"） ---- */
+  const corePts = [
+    [0.0030, 0.024], [0.0058, 0.040], [0.0065, 0.058], [0.0060, 0.076],
+    [0.0040, 0.093], [-0.010, 0.104], [-0.045, 0.110], [-0.095, 0.113],
+    [-0.155, 0.113], [-0.205, 0.111], [-0.240, 0.106], [-0.250, 0.090], [-0.250, 0.024],
+  ];
+  mesh(profileGeo(corePts, 0.316, 0.0045, 12), MAT.enamelSoft, machine);
+
+  // 前脸竖向棱线（铸铁压纹）
+  (function reed() {
+    for (let i = 0; i < 25; i++) {
+      const x = -0.148 + i * 0.01233;
+      const g = new T.CylinderGeometry(0.0018, 0.0018, 0.056, 6, 1, false);
+      const rib = new T.Mesh(g, MAT.enamelSoft);
+      rib.position.set(x, 0.059, 0.0072);
+      machine.add(rib);
+    }
+  })();
+
+  // 前脸金线 + 铭牌
+  (function frontFace() {
+    const l = new T.Mesh(new T.BoxGeometry(0.314, 0.0009, 0.0008), MAT.brass);
+    l.position.set(0, 0.0985, 0.0072);
+    machine.add(l);
+
+    const cv = document.createElement("canvas");
+    cv.width = 512; cv.height = 64;
+    const g = cv.getContext("2d");
+    g.clearRect(0, 0, 512, 64);
+    g.fillStyle = "rgba(203,168,108,0.95)";
+    g.font = "600 30px Georgia, 'Times New Roman', serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.letterSpacing = "6px";
+    g.fillText("THE STANDARD", 256, 30);
+    g.fillRect(26, 52, 460, 1.2);
+
+    const tex = new T.CanvasTexture(cv);
+    tex.encoding = T.sRGBEncoding;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const mat = new T.MeshStandardMaterial({
+      map: tex, transparent: true, roughness: 0.34, metalness: 0.85,
+      envMapIntensity: 1.0, depthWrite: false,
+    });
+    const plate = new T.Mesh(new T.PlaneGeometry(0.086, 0.0108), mat);
+    plate.position.set(-0.108, 0.062, 0.0062);
+    machine.add(plate);
+
+    // 右侧序列号小牌
+    const cv2 = document.createElement("canvas");
+    cv2.width = 256; cv2.height = 64;
+    const g2 = cv2.getContext("2d");
+    g2.clearRect(0, 0, 256, 64);
+    g2.strokeStyle = "rgba(198,160,100,0.75)";
+    g2.lineWidth = 2;
+    g2.strokeRect(4, 10, 248, 44);
+    g2.fillStyle = "rgba(200,164,104,0.9)";
+    g2.font = "600 22px 'Courier New', monospace";
+    g2.textAlign = "center";
+    g2.textBaseline = "middle";
+    g2.fillText("Nº 5 - 2731", 128, 33);
+    const tex2 = new T.CanvasTexture(cv2);
+    tex2.encoding = T.sRGBEncoding;
+    tex2.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const mat2 = new T.MeshStandardMaterial({
+      map: tex2, transparent: true, roughness: 0.36, metalness: 0.85,
+      envMapIntensity: 1.0, depthWrite: false,
+    });
+    const plate2 = new T.Mesh(new T.PlaneGeometry(0.040, 0.0100), mat2);
+    plate2.position.set(0.108, 0.062, 0.0062);
+    machine.add(plate2);
+  })();
+
+  // 喉部暗腔（键杆篮背后的黑）
+  (function throat() {
+    const back = new T.Mesh(
+      new T.BoxGeometry(0.316, 0.086, 0.008),
+      new T.MeshStandardMaterial({ color: 0x08080b, roughness: 1.0, metalness: 0 })
+    );
+    back.position.set(0, 0.148, -0.166);
+    machine.add(back);
+    const floor = new T.Mesh(
+      new T.BoxGeometry(0.312, 0.006, 0.148),
+      new T.MeshStandardMaterial({ color: 0x0a0a0d, roughness: 1.0, metalness: 0 })
+    );
+    floor.position.set(0, 0.1155, -0.078);
+    machine.add(floor);
+  })();
+
+  /* ---- 6.4 色带盘托板 ---- */
+  [-1, 1].forEach(function (s) {
+    // 色带盘立柱：窄刀片从机身顶面伸出，整块位于纸带扫掠范围之外
+    mesh(roundedBox(0.032, 0.0115, 0.082, 0.0045), MAT.enamel, machine, [s * 0.1400, 0.1206, 0.0460]);
+    const l = new T.Mesh(new T.BoxGeometry(0.028, 0.0008, 0.0008), MAT.brass);
+    l.position.set(s * 0.1400, 0.1262, 0.0855);
+    machine.add(l);
+    // 盘轴
+    const pin = new T.Mesh(new T.CylinderGeometry(0.0042, 0.0042, 0.0135, 10), MAT.chrome);
+    pin.position.set(s * 0.1400, 0.1330, 0.0500);
+    machine.add(pin);
+  });
+
+  /* ---- 6.5 滚筒 / 字车 ---- */
+  const carriage = new T.Group();
+  machine.add(carriage);
+
+  const platenGeo = new T.CylinderGeometry(PL.r, PL.r, PL.len, 48, 1, false);
+  platenGeo.rotateZ(Math.PI / 2);
+  const platenMesh = mesh(platenGeo, MAT.rubber, carriage, [0, PL.y, PL.z]);
+
+  // 轴（两端收在旋钮内部）
+  const axle = new T.Mesh(new T.CylinderGeometry(0.0058, 0.0058, 0.336, 12), MAT.chrome);
+  axle.rotation.z = Math.PI / 2;
+  axle.position.set(0, PL.y, PL.z);
+  carriage.add(axle);
+
+  // 两端胶木旋钮：内端面为完整平面（正面看是实心圆盘，不会被看成空心环），
+  // 并紧贴滚筒端面把平端盖遮住
+  const BAKELITE = new T.MeshPhysicalMaterial({
+    color: 0x14110f, roughness: 0.38, metalness: 0.0,
+    clearcoat: 0.45, clearcoatRoughness: 0.30, envMapIntensity: 0.60,
+  });
+  const KH = 0.0142;                          // 旋钮半厚
+  const KX = PL.len / 2 + KH + 0.0004;        // 旋钮中心：内端面比滚筒端面外 0.4mm
+  [-1, 1].forEach(function (s) {
+    const knobPts = [
+      [0.0002, -KH], [0.0394, -KH],            // 内端面（整面）
+      [0.0402, -0.0048],                        // 最宽处
+      [0.0392, 0.0024], [0.0350, 0.0082],
+      [0.0250, 0.0124], [0.0002, KH],
+    ].map(function (p) { return new T.Vector2(p[0], p[1]); });
+    const kg = new T.LatheGeometry(knobPts, 28);
+    kg.rotateZ(-Math.PI / 2 * s);
+    kg.computeVertexNormals();
+    const kb = new T.Mesh(kg, BAKELITE);
+    kb.position.set(s * KX, PL.y, PL.z);
+    kb.castShadow = true; kb.receiveShadow = true;
+    carriage.add(kb);
+
+    // 内缘黄铜卡圈（夹在滚筒与旋钮之间）
+    const rim = new T.Mesh(new T.TorusGeometry(0.0396, 0.0016, 8, 46), MAT.brassDark);
+    rim.rotation.y = Math.PI / 2;
+    rim.position.set(s * (PL.len / 2 + 0.0012), PL.y, PL.z);
+    carriage.add(rim);
+
+    // 轴头
+    const cap = new T.Mesh(new T.CylinderGeometry(0.0046, 0.0046, 0.006, 12), MAT.chrome);
+    cap.rotation.z = Math.PI / 2;
+    cap.position.set(s * (KX + KH - 0.0010), PL.y, PL.z);
+    carriage.add(cap);
+  });
+
+  // 压纸杆
+  (function bail() {
+    const rod = new T.Mesh(new T.CylinderGeometry(0.0028, 0.0028, 0.316, 10), MAT.chrome);
+    rod.rotation.z = Math.PI / 2;
+    rod.position.set(0, 0.1748, 0.0162);
+    rod.castShadow = true;
+    carriage.add(rod);
+
+    [-0.058, 0.058].forEach(function (x) {
+      const roller = new T.Mesh(new T.CylinderGeometry(0.0074, 0.0074, 0.015, 14), MAT.rubberSoft);
+      roller.rotation.z = Math.PI / 2;
+      roller.position.set(x, 0.1752, 0.0208);
+      roller.castShadow = true;
+      carriage.add(roller);
+      const clip = new T.Mesh(new T.TorusGeometry(0.0088, 0.0009, 6, 14, Math.PI), MAT.chrome);
+      clip.position.set(x, 0.1752, 0.0200);
+      carriage.add(clip);
+    });
+
+    [-1, 1].forEach(function (s) {
+      tube([
+        new T.Vector3(s * 0.1600, 0.1630, -0.012),
+        new T.Vector3(s * 0.1585, 0.1700, 0.002),
+        new T.Vector3(s * 0.1520, 0.1748, 0.0162),
+      ], 0.0026, MAT.chrome, carriage, 7);
+    });
+  })();
+
+  // 回车扳手
+  (function carriageLever() {
+    tube([
+      new T.Vector3(-0.166, PL.y - 0.006, PL.z + 0.002),
+      new T.Vector3(-0.196, 0.1620, 0.006),
+      new T.Vector3(-0.2145, 0.1728, 0.016),
+      new T.Vector3(-0.2245, 0.1832, 0.026),
+    ], 0.0050, MAT.chrome, carriage, 9);
+    mesh(roundedBox(0.026, 0.0135, 0.0075, 0.0055), MAT.chrome, carriage,
+      [-0.2255, 0.1900, 0.030], [0.18, 0.30, 0.22]);
+  })();
+
+  // 行距扳手
+  (function lineSpaceLever() {
+    tube([
+      new T.Vector3(0.170, 0.160, -0.022),
+      new T.Vector3(0.196, 0.168, -0.004),
+      new T.Vector3(0.2045, 0.1745, 0.010),
+    ], 0.0028, MAT.chrome, carriage, 7);
+  })();
+
+  /* ---- 6.6 键杆篮 ---- */
+  const BASKET = { cx: 0, cy: 0.0945, cz: -0.074, r: 0.066 };
+  const STRIKE = new T.Vector3(0, 0.1520, -0.0060);
+  const BAR_COUNT = 17;
+  const typebars = [];
+
+  (function basketRing() {
+    const pts = [];
+    for (let i = 0; i <= 44; i++) {
+      const a = T.MathUtils.degToRad(46 + (268 * i) / 44);
+      pts.push(new T.Vector3(
+        Math.sin(a) * BASKET.r,
+        BASKET.cy - 0.003,
+        BASKET.cz + Math.cos(a) * BASKET.r
+      ));
+    }
+    const rail = new T.Mesh(
+      new T.TubeGeometry(new T.CatmullRomCurve3(pts), 100, 0.0056, 7, false),
+      MAT.brassDark
+    );
+    rail.castShadow = true;
+    machine.add(rail);
+
+    for (let i = 0; i <= 16; i++) {
+      const a = T.MathUtils.degToRad(46 + (268 * i) / 16);
+      const seg = new T.Mesh(new T.BoxGeometry(0.0026, 0.0084, 0.0046), MAT.chrome);
+      seg.position.set(Math.sin(a) * BASKET.r, BASKET.cy + 0.0032, BASKET.cz + Math.cos(a) * BASKET.r);
+      seg.rotation.y = a;
+      machine.add(seg);
+    }
+  })();
+
+  (function buildBars() {
+    for (let i = 0; i < BAR_COUNT; i++) {
+      const a = T.MathUtils.degToRad(48 + (264 * i) / (BAR_COUNT - 1));
+      const P = new T.Vector3(
+        BASKET.cx + Math.sin(a) * BASKET.r,
+        BASKET.cy,
+        BASKET.cz + Math.cos(a) * BASKET.r
+      );
+      const dir = new T.Vector3(P.x - BASKET.cx, 0, P.z - BASKET.cz).normalize();
+      const mid = P.clone().add(STRIKE).multiplyScalar(0.5);
+      const cp = mid.clone()
+        .add(dir.clone().multiplyScalar(0.020))
+        .add(new T.Vector3(0, -0.014, 0));
+
+      const curve = new T.QuadraticBezierCurve3(P.clone(), cp, STRIKE.clone());
+      const barGeo = new T.TubeGeometry(curve, 26, 0.0019, 5, false);
+
+      const axis = new T.Vector3(dir.z, 0, -dir.x).normalize();
+      const g = new T.Group();
+      g.position.copy(P);
+      const holder = new T.Group();
+      holder.position.copy(P).multiplyScalar(-1);
+      holder.add(new T.Mesh(barGeo, MAT.steel));
+
+      const slug = new T.Mesh(roundedBox(0.0070, 0.0066, 0.0022, 0.0008), MAT.steel);
+      slug.position.copy(STRIKE).add(new T.Vector3(0, 0, 0.0012));
+      slug.rotation.y = a;
+      holder.add(slug);
+
+      g.add(holder);
+      g.userData.axis = axis;
+      g.userData.rest = -0.30;
+      g.quaternion.setFromAxisAngle(axis, g.userData.rest);
+      machine.add(g);
+      typebars.push(g);
+    }
+  })();
+
+  /* ---- 6.7 色带盘 + 色带 + 导向器 ---- */
+  [-1, 1].forEach(function (s) {
+    const g = new T.Group();
+    g.position.set(s * 0.1400, 0.1362, 0.0520);
+    machine.add(g);
+
+    mesh(new T.CylinderGeometry(0.0315, 0.0315, 0.0030, 30), MAT.brassDark, g, [0, -0.0078, 0]);
+    mesh(new T.CylinderGeometry(0.0262, 0.0262, 0.0145, 30), MAT.ribbon, g, [0, 0.0012, 0]);
+    for (let i = 0; i < 9; i++) {
+      const ring = new T.Mesh(
+        new T.TorusGeometry(0.0268, 0.0005, 5, 34),
+        new T.MeshStandardMaterial({ color: 0x2f0e0c, roughness: 0.88 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, -0.0050 + i * 0.00195, 0);
+      g.add(ring);
+    }
+    mesh(new T.CylinderGeometry(0.0292, 0.0270, 0.0026, 30), MAT.brass, g, [0, 0.0100, 0]);
+    mesh(new T.CylinderGeometry(0.0058, 0.0058, 0.0070, 6), MAT.brass, g, [0, 0.0144, 0]);
+  });
+
+  const RIBBON_PTS = [
+    new T.Vector3(-0.1138, 0.1346, 0.0500),
+    new T.Vector3(-0.0950, 0.1370, 0.0400),
+    new T.Vector3(-0.0680, 0.1392, 0.0300),
+    new T.Vector3(-0.0330, 0.1412, 0.0222),
+    new T.Vector3(0.0000, 0.1417, 0.0184),
+    new T.Vector3(0.0330, 0.1412, 0.0222),
+    new T.Vector3(0.0680, 0.1392, 0.0300),
+    new T.Vector3(0.0950, 0.1370, 0.0400),
+    new T.Vector3(0.1138, 0.1346, 0.0500),
+  ];
+  const ribbonMesh = new T.Mesh(buildRibbon(RIBBON_PTS, 0.0085), MAT.ribbon);
+  ribbonMesh.castShadow = true;
+  ribbonMesh.receiveShadow = false;
+  machine.add(ribbonMesh);
+
+  // 击打瞬间把色带中段提起来（色带升降器）
+  function updateRibbon(lift) {
+    const pos = ribbonMesh.geometry.attributes.position;
+    const curve = new T.CatmullRomCurve3(RIBBON_PTS);
+    const N = 96;
+    let k = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const p = curve.getPoint(t);
+      const bump = Math.exp(-Math.pow((t - 0.5) / 0.17, 2));
+      const dy = lift * bump;
+      pos.setY(k, p.y + 0.00425 + dy);
+      pos.setY(k + 1, p.y - 0.00425 + dy);
+      k += 2;
+    }
+    pos.needsUpdate = true;
+  }
+
+  function buildRibbon(pts, width) {
+    const curve = new T.CatmullRomCurve3(pts);
+    const N = 96;
+    const pos = [], idx = [], nor = [], uv = [];
+    const up = new T.Vector3(0, 1, 0);
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const p = curve.getPoint(t);
+      const tan = curve.getTangent(t).normalize();
+      const nrm = new T.Vector3().crossVectors(tan, up).normalize();
+      const hw = width / 2;
+      pos.push(p.x, p.y + hw, p.z, p.x, p.y - hw, p.z);
+      nor.push(nrm.x, nrm.y, nrm.z, nrm.x, nrm.y, nrm.z);
+      uv.push(t, 1, t, 0);
+      if (i < N) {
+        const a = i * 2;
+        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+    g.setAttribute("normal", new T.Float32BufferAttribute(nor, 3));
+    g.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    return g;
+  }
+
+  const vibrator = new T.Group();
+  vibrator.position.set(0, 0.1417, 0.0205);
+  machine.add(vibrator);
+  (function buildVibrator() {
+    mesh(roundedBox(0.019, 0.0040, 0.0044, 0.0013), MAT.brass, vibrator, [0, -0.0064, -0.0030]);
+    [-1, 1].forEach(function (s) {
+      mesh(new T.BoxGeometry(0.0018, 0.0112, 0.0026), MAT.brass, vibrator,
+        [s * 0.0082, -0.0008, 0], [0, 0, s * 0.05]);
+    });
+    mesh(new T.BoxGeometry(0.0178, 0.0012, 0.0026), MAT.brass, vibrator, [0, 0.0040, 0]);
+  })();
+
+  /* ---- 6.8 墙装托架 ---- */
+  (function brackets() {
+    const bronze = new T.MeshStandardMaterial({
+      color: 0x5f4828, roughness: 0.48, metalness: 1.0, envMapIntensity: 0.8,
+    });
+    const dark = new T.MeshStandardMaterial({ color: 0x241c14, roughness: 0.66, metalness: 0.4 });
+
+    [-1, 1].forEach(function (s) {
+      const g = new T.Group();
+      g.position.set(s * 0.132, 0, 0);
+      machine.add(g);
+
+      mesh(roundedBox(0.034, 0.066, 0.007, 0.005), dark, g, [0, -0.050, -0.2725]);
+      [-0.024, 0.024].forEach(function (dy) {
+        const b = new T.Mesh(new T.CylinderGeometry(0.0058, 0.0058, 0.005, 8), bronze);
+        b.rotation.x = Math.PI / 2;
+        b.position.set(0, -0.050 + dy, -0.2682);
+        g.add(b);
+      });
+
+      tube([
+        new T.Vector3(0, -0.020, -0.2690),
+        new T.Vector3(0, -0.016, -0.205),
+        new T.Vector3(0, -0.009, -0.115),
+        new T.Vector3(0, -0.003, -0.038),
+        new T.Vector3(0, 0.001, 0.004),
+      ], 0.0068, bronze, g, 10);
+
+      tube([
+        new T.Vector3(0, 0.001, 0.006),
+        new T.Vector3(0, 0.009, 0.013),
+        new T.Vector3(0, 0.013, 0.019),
+      ], 0.0060, bronze, g, 8);
+    });
+  })();
+
+  /* ==================================================================
+     7. 纸带
+     ================================================================== */
+  // 纸带偏移：让"每次落字都正好落在击打点 x=0"——即首字格左边缘对齐版心中线
+  const PAPER_SHIFT = (PXW / 2 - TEXT_L) / PXPM;
+
+  const paperGroup = new T.Group();
+  paperGroup.position.set(PAPER_SHIFT, PL.y, PL.z + PL.r);
+  carriage.add(paperGroup);
+
+  // 画布：底色 + 纤维
+  const bgCanvas = document.createElement("canvas");
+  bgCanvas.width = PXW; bgCanvas.height = PXH;
+  (function paintPaperBg() {
+    const g = bgCanvas.getContext("2d");
+    g.fillStyle = "#eee2cb";
+    g.fillRect(0, 0, PXW, PXH);
+
+    // 大块深浅
+    for (let i = 0; i < 120; i++) {
+      const x = Math.random() * PXW, y = Math.random() * PXH, r = 40 + Math.random() * 260;
+      const grd = g.createRadialGradient(x, y, 0, x, y, r);
+      const warm = Math.random() > 0.45;
+      grd.addColorStop(0, warm ? "rgba(214,192,158,0.05)" : "rgba(255,252,242,0.06)");
+      grd.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grd;
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // 纤维
+    for (let i = 0; i < 900; i++) {
+      const x = Math.random() * PXW, y = Math.random() * PXH;
+      const l = 6 + Math.random() * 26;
+      g.strokeStyle = "rgba(150,130,100," + (0.02 + Math.random() * 0.045) + ")";
+      g.lineWidth = 0.7;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + (Math.random() - 0.5) * 3, y + l);
+      g.stroke();
+    }
+    // 颗粒
+    const img = g.getImageData(0, 0, PXW, PXH);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (Math.random() - 0.5) * 9;
+      d[i] += n; d[i + 1] += n; d[i + 2] += n * 0.8;
+    }
+    g.putImageData(img, 0, 0);
+
+    // 两侧微微压暗（纸面弧度的暗示）
+    const lg = g.createLinearGradient(0, 0, PXW, 0);
+    lg.addColorStop(0, "rgba(120,100,70,0.10)");
+    lg.addColorStop(0.06, "rgba(120,100,70,0)");
+    lg.addColorStop(0.94, "rgba(120,100,70,0)");
+    lg.addColorStop(1, "rgba(120,100,70,0.10)");
+    g.fillStyle = lg;
+    g.fillRect(0, 0, PXW, PXH);
+
+    // 滚筒投在纸面上的柔影（贴在纸带顶部）
+    const tg = g.createLinearGradient(0, 0, 0, WRAP * PXPM + 150);
+    tg.addColorStop(0, "rgba(70,58,44,0.30)");
+    tg.addColorStop(0.35, "rgba(70,58,44,0.10)");
+    tg.addColorStop(1, "rgba(70,58,44,0)");
+    g.fillStyle = tg;
+    g.fillRect(0, 0, PXW, WRAP * PXPM + 150);
+  })();
+
+  const paperCanvas = document.createElement("canvas");
+  paperCanvas.width = PXW; paperCanvas.height = PXH;
+  const paperCtx = paperCanvas.getContext("2d");
+
+  const paperTex = new T.CanvasTexture(paperCanvas);
+  paperTex.encoding = T.sRGBEncoding;
+  paperTex.minFilter = T.LinearFilter;
+  paperTex.magFilter = T.LinearFilter;
+  paperTex.generateMipmaps = false;
+  paperTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+  const paperMat = new T.MeshStandardMaterial({
+    map: paperTex, color: 0xc9bda4, roughness: 1.0, metalness: 0.0, envMapIntensity: 0.18,
+    side: T.DoubleSide,
+  });
+
+  const paperGeo = buildPaperGeometry();
+  const paperMesh = new T.Mesh(paperGeo, paperMat);
+  paperMesh.castShadow = true;
+  paperMesh.receiveShadow = true;
+  paperGroup.add(paperMesh);
+
+  function buildPaperGeometry() {
+    const NX = 16, NY = 340;
+    const pos = [], uv = [], idx = [];
+    for (let j = 0; j <= NY; j++) {
+      const v = j / NY;
+      const s = v * PAPER_LEN;
+      for (let i = 0; i <= NX; i++) {
+        const u = i / NX;
+        const x = (u - 0.5) * PAPER_W;
+        let y, z;
+        if (s < WRAP) {
+          const th = s / PL.r;
+          const R = PL.r + 0.0012;
+          y = R * Math.cos(th);
+          z = -PL.r + R * Math.sin(th);
+        } else {
+          const d = s - WRAP;
+          y = -d;
+          // 横向微弧 + 纵向轻微起伏；两者都在前 12mm 内渐入，保证与包裹段接缝连续
+          const k = Math.min(1, d * 0.085);
+          const bow = -0.0030 * (1 - Math.pow(2 * u - 1, 2)) * k;
+          const ripple = 0.0011 * (0.5 + 0.5 * Math.sin(d * 2.4 + u * 1.6)) * Math.min(1, d * 3.4);
+          z = 0.0012 + bow + ripple;
+        }
+        pos.push(x, y, z);
+        uv.push(u, 1 - v);
+        if (i < NX && j < NY) {
+          const a = j * (NX + 1) + i;
+          const b = a + NX + 1;
+          idx.push(a, b, a + 1, b, b + 1, a + 1);
+        }
+      }
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+    g.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+
+  /* ---- 7.1 纸面排版 ---- */
+  const lines = [];     // { text, canvas, ctx, seed }
+  const PR = mulberry32(20261023);
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function newLine() {
+    const c = document.createElement("canvas");
+    c.width = PXW; c.height = LH;
+    const ctx = c.getContext("2d");
+    // 每行独立的抖动种子，重绘时保持稳定
+    const seed = (Math.random() * 1e9) | 0;
+    const line = { text: "", canvas: c, ctx: ctx, seed: seed, jitter: [] };
+    return line;
+  }
+
+  function renderLine(line) {
+    const ctx = line.ctx;
+    ctx.clearRect(0, 0, PXW, LH);
+    ctx.font = FONT_STYLE;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    const rand = mulberry32(line.seed);
+    const baseY = LH * 0.74;
+    for (let i = 0; i < line.text.length; i++) {
+      if (!line.jitter[i]) {
+        line.jitter[i] = {
+          dy: (rand() - 0.5) * 2.6,
+          dx: (rand() - 0.5) * 0.9,
+          rot: (rand() - 0.5) * 0.022,
+          a: 0.80 + rand() * 0.17,
+        };
+      }
+      const j = line.jitter[i];
+      const x = TEXT_L + i * ADV + j.dx;
+      ctx.save();
+      ctx.translate(x, baseY + j.dy);
+      ctx.rotate(j.rot);
+      ctx.shadowColor = "rgba(38,32,26,0.30)";
+      ctx.shadowBlur = 1.1;
+      ctx.fillStyle = "rgba(41,36,30," + j.a + ")";
+      ctx.fillText(line.text[i], 0, 0);
+      // 轻微的重影（铅字边缘）
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(58,50,42,0.22)";
+      ctx.fillText(line.text[i], 0.45, 0.3);
+      ctx.restore();
+    }
+  }
+
+  function composePaper() {
+    paperCtx.clearRect(0, 0, PXW, PXH);
+    paperCtx.drawImage(bgCanvas, 0, 0);
+    for (let i = 0; i < lines.length; i++) {
+      const baseline = LINE0_BASE + (state.feed - i) * LH;
+      const top = baseline - LH * 0.74;
+      if (top > PXH || top + LH < -40) continue;
+      paperCtx.drawImage(lines[i].canvas, 0, Math.round(top));
+    }
+    paperTex.needsUpdate = true;
+  }
+
+  /* ==================================================================
+     8. 打字状态机
+     ================================================================== */
+  const state = {
+    mode: "idle",     // idle | typing | return
+    feed: 0,          // 已下移的行数（浮点）
+    car: 0,           // 字车横向位移（米，正值向左）
+    carTarget: 0,
+    charIdx: 0,
+    nextAt: 0,
+    returnT0: 0,
+    returnFrom: { car: 0, feed: 0 },
+    curLine: null,
+    strikes: [],
+    vibrateT0: -1e9,
+  };
+
+  const PITCH = ADV / PXPM;
+
+  function setStatus(txt, busy) {
+    el.status.textContent = txt;
+    el.led.classList.toggle("busy", !!busy);
+    el.btn.disabled = !!busy;
+    el.btn.textContent = busy ? "敲击中…" : "测试打字";
+  }
+
+  function startTyping() {
+    if (state.mode !== "idle") return;
+    const line = newLine();
+    state.curLine = line;
+    lines.push(line);
+    state.charIdx = 0;
+    state.mode = "typing";
+    state.nextAt = performance.now() + 150;
+    setStatus("打字中", true);
+    el.count.textContent = String(lines.length - 1);
+  }
+
+  function strikeBar(ch) {
+    let h = 0;
+    for (let i = 0; i < ch.length; i++) h = (h * 31 + ch.charCodeAt(i)) >>> 0;
+    const bar = typebars[h % BAR_COUNT];
+    const now = performance.now();
+    state.strikes.push({ bar: bar, t0: now, dur: 190 });
+    state.vibrateT0 = now;
+  }
+
+  function updateTyping(now) {
+    if (state.mode === "typing") {
+      if (now >= state.nextAt) {
+        const ch = TEST_TEXT[state.charIdx];
+        strikeBar(ch);
+        state.curLine.text += ch;
+        renderLine(state.curLine);
+        composePaper();
+        state.charIdx++;
+        state.carTarget = state.charIdx * PITCH;
+
+        if (state.charIdx >= TEST_TEXT.length) {
+          state.mode = "return";
+          state.returnT0 = now;
+          state.returnFrom.car = state.car;
+          state.returnFrom.feed = state.feed;
+          setStatus("换行", true);
+        } else {
+          state.nextAt = now + 88 + Math.random() * 34;
+        }
+      }
+    } else if (state.mode === "return") {
+      const D = 720;
+      let p = Math.min(1, (now - state.returnT0) / D);
+      const e = easeInOutCubic(p);
+      // 回车：先快速回位，纸带同步下移一行
+      state.car = state.returnFrom.car * (1 - e);
+      state.feed = state.returnFrom.feed + e;
+      if (p >= 1) {
+        state.car = 0;
+        state.feed = Math.round(state.feed);
+        state.carTarget = 0;
+        state.mode = "idle";
+        setStatus("待机", false);
+        el.count.textContent = String(lines.length);
+      }
+      composePaper();
+    }
+  }
+
+  function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function updateStrikes(now) {
+    const st = state.strikes;
+    for (let i = st.length - 1; i >= 0; i--) {
+      const s = st[i];
+      const p = (now - s.t0) / s.dur;
+      const rest = s.bar.userData.rest;
+      if (p >= 1) {
+        s.bar.quaternion.setFromAxisAngle(s.bar.userData.axis, rest);
+        st.splice(i, 1);
+        continue;
+      }
+      let a;
+      if (p < 0.30) {
+        a = rest * (1 - easeOutCubic(p / 0.30));
+      } else {
+        a = rest * easeInOutCubic((p - 0.30) / 0.70);
+      }
+      s.bar.quaternion.setFromAxisAngle(s.bar.userData.axis, a);
+    }
+
+    // 色带导向器抬升
+    const vp = (now - state.vibrateT0) / 190;
+    let lift = 0;
+    if (vp >= 0 && vp < 1) {
+      lift = vp < 0.32 ? vp / 0.32 : 1 - (vp - 0.32) / 0.68;
+    }
+    vibrator.position.y = 0.1417 + lift * 0.0092;
+    updateRibbon(lift * 0.0092);
+  }
+
+  /* ==================================================================
+     9. 相机取景
+     ================================================================== */
+  const camTarget = new T.Vector3(0, 0.78, 0.26);
+
+  function layout() {
+    const W = window.innerWidth, H = window.innerHeight;
+    renderer.setSize(W, H, false);
+    camera.aspect = W / H;
+
+    const narrow = W <= 820;
+    const panelW = narrow ? 0 : Math.min(342, W * 0.30) + 62;
+    const panelH = narrow ? Math.min(300, H * 0.42) : 0;
+
+    const availW = Math.max(160, W - panelW - 40);
+    const availH = Math.max(160, H - panelH - 56);
+
+    const fovRad = camera.fov * Math.PI / 180;
+    const tanHalf = Math.tan(fovRad / 2);
+    const boxW = narrow ? 0.58 : 0.52, boxH = 0.50;
+
+    // 让 content 盒子刚好塞进"面板以外"的可用像素区
+    const distW = boxW * H / (2 * tanHalf * availW);
+    const distH = boxH * H / (2 * tanHalf * availH);
+    let dist = Math.min(Math.max(distW, distH), 4.2);
+
+    const visH = 2 * dist * tanHalf;
+    const visW = visH * camera.aspect;
+
+    const frameTop = 1.202 + (narrow ? 0.09 : 0.062);
+    const targetY = frameTop - visH * 0.5;
+
+    let shiftX = 0;
+    if (!narrow) {
+      const availCenterPx = 20 + availW / 2;
+      const dxPx = W / 2 - availCenterPx;
+      shiftX = (dxPx / W) * visW;
+    }
+
+    // 调试用相机覆盖
+    const dDist = parseFloat(Q.get("dist") || "");
+    const dTy = parseFloat(Q.get("ty") || "");
+    const dTx = parseFloat(Q.get("tx") || "");
+    const dYaw = parseFloat(Q.get("yaw") || "");
+    const dPitch = parseFloat(Q.get("pitch") || "");
+    if (!isNaN(dDist)) dist = dDist;
+
+    camTarget.set(isNaN(dTx) ? shiftX : dTx, isNaN(dTy) ? targetY : dTy, 0.24);
+    const yawA = isNaN(dYaw) ? 0.44 : dYaw;
+    const pitchA = isNaN(dPitch) ? 0.20 : dPitch;
+    const dir = new T.Vector3(yawA, pitchA, 1).normalize();
+    camera.position.copy(camTarget).addScaledVector(dir, dist);
+    camera.lookAt(camTarget);
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", layout);
+
+  /* ==================================================================
+     10. 主循环
+     ================================================================== */
+  const clock = { last: performance.now() };
+  let ready = false;
+
+  function tick() {
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - clock.last) / 1000);
+    clock.last = now;
+    const t = now / 1000;
+
+    // 闲置摆动（纸带挂在那儿的呼吸感）
+    const sway = state.mode === "idle" ? 1 : 0.55;
+    paperGroup.rotation.z = Math.sin(t * 0.62) * 0.0042 * sway;
+    paperGroup.rotation.x = Math.sin(t * 0.43 + 1.1) * 0.0026 * sway;
+    paperGroup.rotation.y = Math.sin(t * 0.31 + 0.4) * 0.0035 * sway;
+
+    // 字车缓动
+    if (state.mode !== "return") {
+      const d = state.carTarget - state.car;
+      if (Math.abs(d) > 1e-5) {
+        state.car += d * Math.min(1, dt * 22);
+      }
+    }
+    carriage.position.x = -state.car;
+
+    // 滚筒随走纸转动
+    platenMesh.rotation.x = -state.feed * LH / PXPM / PL.r;
+    axle.rotation.x = platenMesh.rotation.x;
+
+    updateStrikes(now);
+    updateTyping(now);
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+
+  /* ==================================================================
+     11. 启动
+     ================================================================== */
+  el.btn.addEventListener("click", startTyping);
+
+  // 演示参数：?demo=N 预置 N 行
+  (function () {
+    const d = parseInt(Q.get("demo") || "", 10);
+    if (!isNaN(d) && d > 0) {
+      for (let i = 0; i < d; i++) {
+        const l = newLine();
+        l.text = TEST_TEXT.slice(0, i === d - 1 ? 5 : TEST_TEXT.length);
+        renderLine(l);
+        lines.push(l);
+      }
+      state.feed = d - 1 + 0.0;
+      el.count.textContent = String(d - 1);
+    }
+  })();
+
+  // 调试：?ui=0 隐藏界面
+  if (Q.get("ui") === "0") {
+    document.querySelectorAll(".panel,.caption,.vig,.grain").forEach(function (n) { n.style.display = "none"; });
+  }
+
+  // 调试：把纸面画布贴到页面上（?dump=1）
+  (function () {
+    if (Q.get("dump") !== "1") return;
+    paperCanvas.style.cssText = "position:fixed;left:0;top:0;z-index:99;height:1600px;width:auto;background:#fff;outline:2px solid red";
+    document.body.appendChild(paperCanvas);
+    const info = document.createElement("div");
+    info.style.cssText = "position:fixed;left:260px;top:0;z-index:100;font:12px monospace;background:#fff;padding:8px;white-space:pre";
+    info.textContent = ["PXH=" + PXH, "LINE0=" + LINE0_BASE, "WRAPpx=" + Math.round(WRAP * PXPM),
+      "lines=" + lines.length, "feed=" + state.feed, "TEXT_L=" + TEXT_L, "FONT=" + FONT].join(" | ")
+    document.body.appendChild(info);
+  })();
+
+  // 初始纸面：空白（第一行留在滚筒口）
+  composePaper();
+  layout();
+  setStatus("待机", false);
+  requestAnimationFrame(tick);
+
+  // 调试/自动化入口
+  window.__typewriter = {
+    paperCanvas: paperCanvas,
+    ribbon: ribbonMesh,
+    bars: typebars,
+    paper: paperMesh,
+    platen: platenMesh,
+    renderer: renderer,
+    scene: scene,
+    metrics: { ADV: ADV, FONT: FONT, PXW: PXW, TEXT_L: TEXT_L, TEXT_C: TEXT_C, PAPER_W: PAPER_W },
+    start: startTyping,
+    state: state,
+    lines: lines,
+    camera: camera,
+    carriage: carriage,
+    machine: machine,
+    setCar: function (v) { state.car = v; state.carTarget = v; carriage.position.x = -v; },
+    setFeed: function (n) { state.feed = n; composePaper(); },
+    preview: function (n, partial) {
+      lines.length = 0;
+      for (let i = 0; i < n; i++) {
+        const l = newLine();
+        l.text = TEST_TEXT.slice(0, partial === undefined ? TEST_TEXT.length : partial);
+        renderLine(l);
+        lines.push(l);
+      }
+      state.feed = Math.max(0, n - 1);
+      composePaper();
+    },
+  };
+})();
+</script>
+</body>
+</html>

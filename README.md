@@ -2,7 +2,7 @@
 
 个人主页，托管于 GitHub Pages：https://lxflgh.github.io/melavonmen/
 
-主页和艺术 POC 展厅为纯静态 HTML/CSS，无框架、无 CDN；展厅嵌入 `experiments/phosphor-crt.html?embed=1`，该 Three.js WebGL 实验页使用 CDN 加载 Three.js 模块与字体。
+主页和艺术 POC 展厅为纯静态 HTML/CSS，无框架；展厅按需嵌入 `experiments/*/index.html?embed=1`，该 Three.js WebGL 实验页使用 CDN 加载 Three.js 模块与字体。
 
 ## 酸性设计（Acid Graphics）
 
@@ -19,6 +19,9 @@ index.html          首页（个人主页：入口卡片 + 文章列表）
 games.html          游戏作品（作品卡片 + FCN 实机截图 + 后续作品占位）
 art-poc.html        艺术 POC 展厅（Acid Graphics 风格，内嵌 CRT 交互页）
 experiments/phosphor-crt.html  Three.js CRT 显示器（可独立打开，也支持 ?embed=1 嵌入）
+experiments/typewriter/         墙上的打字机（three.js，单文件 + three.min.js）
+experiments/crt-terminal/       CRT-1520 荧光终端（单文件自包含）
+experiments/reactor-control-room/  第一人称反应堆控制室（index.html + css/ + js/ + vendor/）
 heatmap.html        贡献热力图（自包含单页，保留 JS 数据逻辑，酸性主题内联）
 about.html          关于
 posts/              文章（独立 HTML，命名 YYYY-MM-DD-标题.html）
@@ -30,7 +33,12 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 
 - 主页 Hero 区「艺术 POC ↗」按钮与艺术实验卡片均链接到 `art-poc.html`，地址为 `https://lxflgh.github.io/melavonmen/art-poc.html`。
 - 新增实验优先放在艺术 POC 展厅下，避免与游戏作品页混杂；展厅整体复用 `css/style.css` 的 Acid Graphics 设计（荧光黄绿、工业黑、硬边框、网格纹理）。
-- 第一号实验为 `experiments/phosphor-crt.html`，支持独立浏览（`https://lxflgh.github.io/melavonmen/experiments/phosphor-crt.html`）及 `?embed=1` 模式（展厅的 iframe 嵌入预览）。
+- 目前共四号实验，全部支持独立浏览与 `?embed=1` 嵌入预览：
+  1. `experiments/phosphor-crt.html` — 荧光 CRT 显示器（Three.js 模块从 CDN 加载）。
+  2. `experiments/typewriter/index.html` — 墙上的打字机（本地 `three.min.js`）。
+  3. `experiments/crt-terminal/index.html` — CRT-1520 荧光终端（自包含单文件）。
+  4. `experiments/reactor-control-room/index.html` — 1970s 反应堆控制室第一人称漫游（自带 `vendor/`，无 CDN 依赖）。
+- 四个实验页顶部共用一条 **Acid Graphics 站点导航条**（`#site-bar`，38px，荧光黄绿 `#dcff46`），只负责站点级导航，不介入作品自身的 HUD；`?embed=1` 时整条隐藏，iframe 里只剩作品本体。页面自己的顶部 HUD（如终端提示条、控制室左右仪表）在非嵌入模式下自动让到导航条下方。
 - CRT 模型包含球面玻璃、Bloom 泛光、扫描线、荧光余辉、动态信号与交互调参。实验页控制面板、导航和外围 UI 采用主站酸性设计，但显示器荧光粉颜色的绿/琥珀/青色选项保持原模拟特征。
 - Three.js ES Modules 及展示字体从外部 CDN 加载；首次打开需联网并使用支持 WebGL 的浏览器。
 

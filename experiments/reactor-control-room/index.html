@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed-mode');</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNIT 4 — Reactor Control Room / 1974</title>
+<link rel="stylesheet" href="css/style.css">
+<style id="site-chrome">
+/* MELAVONMEN SITE CHROME — ACID GRAPHICS (2026)
+   Only the surrounding frame is styled here; the artwork inside stays untouched. */
+:root{--site-bar-h:38px;--acid:#dcff46;--violet:#b49bff;--ink:#f2f3e9}
+.site-bar{position:fixed;inset:0 0 auto 0;height:var(--site-bar-h);z-index:2147483000;
+  display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:rgba(16,17,15,.94);border-bottom:2px solid var(--acid);
+  font:700 10px/1.2 "Courier New",ui-monospace,monospace;letter-spacing:.14em;color:var(--acid);
+  backdrop-filter:blur(10px);transform:translateY(0);opacity:1;
+  transition:transform .26s ease,opacity .26s ease}
+.site-bar a{color:var(--acid);text-decoration:none;white-space:nowrap}
+.site-bar a:hover{color:var(--violet)}
+.site-bar .bar-mark{font:900 13px/1 Arial,sans-serif;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink)}
+.site-bar .bar-mark b{color:var(--acid)}
+.site-bar .bar-id{border:1px solid #647536;padding:3px 6px;color:var(--acid)}
+.site-bar .bar-sep{color:#555a4e}
+.site-bar .bar-name{color:var(--muted,#aeb2a4);letter-spacing:.1em}
+.site-bar .bar-right{margin-left:auto;display:flex;align-items:center;gap:14px;color:#aeb2a4}
+.site-bar.is-hidden{transform:translateY(-100%);opacity:0;pointer-events:none}
+.site-bar:focus-within{transform:none;opacity:1;pointer-events:auto}
+html.embed-mode .site-bar{display:none!important}
+/* keep the page's own top HUD clear of the bar */
+html:not(.embed-mode) .tl,html:not(.embed-mode) .tr{top:calc(24px + var(--site-bar-h))}
+
+@media(max-width:640px){.site-bar{font-size:9px;gap:8px;padding:0 10px}.site-bar .bar-mark{display:none}.site-bar .bar-name{display:none}}
+@media(prefers-reduced-motion:reduce){.site-bar{transition:none}}
+</style>
+</head>
+<body>
+<div class="site-bar" id="site-bar" role="navigation" aria-label="Melavonmen 站点导航">
+  <a class="bar-mark" href="../../index.html">✳ Mela<b>vonmen</b></a>
+  <span class="bar-id">EXP 004</span>
+  <span class="bar-sep">/</span>
+  <span class="bar-name">REACTOR CONTROL ROOM</span>
+  <span class="bar-right">
+    <a href="../../art-poc.html#lab-index">← ART LAB</a>
+    <a href="../../art-poc.html#reactor">展厅条目 ↗</a>
+  </span>
+</div>
+
+<canvas id="scene"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div class="hud-panel tl">
+    <div class="plate">
+      <div class="kicker">CONSOLIDATED POWER &amp; LIGHT</div>
+      <div class="title">REACTOR CONTROL ROOM</div>
+      <div class="sub">UNIT 4 &nbsp;·&nbsp; PRESSURIZED WATER &nbsp;·&nbsp; SHIFT B</div>
+    </div>
+    <div class="row tiny"><span class="lbl">OPERATOR</span><span class="val">R-12 / K. VOSS</span></div>
+    <div class="row tiny"><span class="lbl">PLANT TIME</span><span class="val" id="h-clock">03:47:00</span></div>
+  </div>
+
+  <div class="hud-panel tr">
+    <div class="row"><span class="lbl">REACTOR POWER</span><span class="val" id="h-pwr">072.4</span><span class="unit">%</span></div>
+    <div class="bar"><i id="h-pwrbar"></i></div>
+    <div class="row"><span class="lbl">COOLANT TEMP</span><span class="val" id="h-cool">291.0</span><span class="unit">°C</span></div>
+    <div class="bar cool"><i id="h-coolbar"></i></div>
+    <div class="row"><span class="lbl">ROD POSITION</span><span class="val" id="h-rods">184</span><span class="unit">/211</span></div>
+    <div class="row"><span class="lbl">CORE FLOW</span><span class="val" id="h-flow">86.2</span><span class="unit">kg/s</span></div>
+    <div class="row status"><span class="lbl">STATUS</span><span class="val ok" id="h-state">NOMINAL</span></div>
+  </div>
+
+  <div class="hud-panel bl">
+    <div class="lbl">EVENT LOG</div>
+    <div id="log-line">SYSTEMS NOMINAL — SHIFT B</div>
+    <div class="caret">▌</div>
+  </div>
+
+  <div class="hud-panel br">
+    <div class="keys"><b>W A S D</b> MOVE</div>
+    <div class="keys"><b>SPACE</b> JUMP</div>
+    <div class="keys"><b>SHIFT</b> FAST</div>
+    <div class="keys"><b>CLICK / E</b> OPERATE</div>
+    <div class="keys"><b>F</b> TORCH <span id="torch" class="torch-dot"></span></div>
+    <div class="keys"><b>ESC</b> RELEASE</div>
+  </div>
+
+  <div id="crosshair"><i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><span></span></div>
+  <div id="hint">SCRAM</div>
+</div>
+
+<!-- ============ INTRO ============ -->
+<div id="intro">
+  <div class="intro-inner">
+    <div class="intro-kicker">CONSOLIDATED POWER &amp; LIGHT · STATION 4</div>
+    <h1>REACTOR<br><span>CONTROL ROOM</span></h1>
+    <div class="rule"></div>
+    <div class="intro-meta">
+      <span>PWR · 1100 MWe</span><span>CONTROL DESK 4-A</span><span>03:47 HRS</span>
+    </div>
+    <div class="intro-body">
+      <div class="lead">主控制台视角 · 四处子控制台分布在房间四周</div>
+      <div class="grp">
+        <span><i>01</i>荧光管数字墙 · 北墙左</span>
+        <span><i>02</i>LED 点阵面板 · 北墙右</span>
+        <span><i>03</i>翻牌显示器 · 西墙</span>
+        <span><i>04</i>背光模拟屏 · 东墙</span>
+      </div>
+    </div>
+    <button id="enter">CLICK TO ENTER</button>
+    <div class="intro-keys">WASD 移动 · 空格跳跃 · 鼠标环视 · 点击操作设备</div>
+    <div class="intro-foot">冷战工业风 / 1970s INSTRUMENTATION STUDY</div>
+  </div>
+</div>
+
+<div id="pause"><div>PAUSED<br><small>CLICK TO RESUME</small></div></div>
+
+<div id="loading">
+  <div class="load-box">
+    <div class="load-title">UNIT 4</div>
+    <div class="load-sub">WARMING FILAMENTS · PRESSURIZING LOOP</div>
+    <div class="load-bar"><i></i></div>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/shaders/CopyShader.js"></script>
+<script src="vendor/shaders/LuminosityHighPassShader.js"></script>
+<script src="vendor/postprocessing/EffectComposer.js"></script>
+<script src="vendor/postprocessing/ShaderPass.js"></script>
+<script src="vendor/postprocessing/MaskPass.js"></script>
+<script src="vendor/postprocessing/RenderPass.js"></script>
+<script src="vendor/postprocessing/UnrealBloomPass.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/parts.js"></script>
+<script src="js/room.js"></script>
+<script src="js/consoles.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
