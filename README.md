@@ -64,7 +64,7 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 
 Agent Work Stream skill 的发布归档，与站点页面解耦，纯静态文件，不参与首页/作品页渲染。
 
-- `skill/melavonmen/`：可直接覆盖安装的 skill 包（`SKILL.md` + `references/` + `scripts/` + `templates/`），包内语义版本 **2.3.1**。
-- `downloads/melavonmen-alpha0.1.8.1.zip`：同一份内容的归档包（由 `git archive alpha0.1.8.1` 生成，不含 `.git`），44,187 字节，sha256 `1fdb15aeb047d0dd58a556cb03f471ad80e430a090fe6c556439687d830d3f38`。
+- `skill/melavonmen/`：可直接覆盖安装的 skill 包（`SKILL.md` + `references/` + `scripts/` + `templates/`），版本 **2.3.1**。
+- `downloads/melavonmen-2.3.1.zip`：同一份内容的归档包（`git archive 2.3.1` 生成，不含 `.git`），43,753 字节，sha256 `69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b`。
 - 安装：解压后覆盖到 `~/.workbuddy/skills/melavonmen/`；校验器仅需 Python 3.10+ 标准库，自测 `python -m unittest discover -s scripts/tests`。
-- 版本口径：`alpha0.1.8.1` 是归档发布序号，skill 自身语义版本取 `SKILL.md` 的 `version` 字段，两者不互相覆盖；更新 skill 时同时更新 zip 与本段说明。
+- 版本口径：zip 名、git tag 与 `SKILL.md` 的 `version` 统一为 `2.3.1`；更新 skill 时同步包内容、zip 与本段说明。
