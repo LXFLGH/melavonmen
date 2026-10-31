@@ -78,3 +78,28 @@
 @media(max-width:1000px){.lab-number{font-size:75px}.lab-preview-toolbar-right{display:none}}
 @media(max-width:760px){.art-head{padding-top:65px}.art-head h1{font-size:clamp(66px,15vw,100px)}.lab-feature{scroll-margin-top:140px;margin-bottom:65px}.lab-feature-title{align-items:flex-start}.lab-number{font-size:58px}.lab-feature-title h2{font-size:clamp(38px,9vw,72px)}.lab-preview iframe{height:570px;min-height:0}.lab-feature-foot{flex-direction:column;align-items:stretch}.lab-feature-foot .btn{align-self:flex-start}.lab-index-row{grid-template-columns:45px 1fr auto}.lab-index-row span:nth-of-type(2){display:none}}
 @media(max-width:460px){.lab-feature-title{display:block}.lab-number{display:none}.lab-preview-toolbar{font-size:9px}.lab-preview iframe{height:540px}.lab-feature-foot .btn{align-self:stretch}.lab-head .actions{gap:8px}}
+
+
+/* DOWNLOADS — skill release page (downloads.html). */
+.dl-hero{padding:clamp(58px,8vw,104px) 0 42px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.dl-hero h1{font:900 clamp(54px,9vw,132px)/.92 Arial,sans-serif;letter-spacing:-.08em;text-transform:uppercase;margin:14px 0 22px;position:relative;z-index:1}
+.dl-hero h1 span{color:var(--acid)}
+.dl-hero .sub{color:var(--muted);max-width:740px;position:relative;z-index:1}
+.dl-hero .actions{margin-top:30px}
+.dl-decor{position:absolute;right:0;top:40px;font:900 clamp(120px,19vw,260px)/1 Arial,sans-serif;color:var(--acid);opacity:.1;pointer-events:none}
+.dl-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;margin:44px 0 70px}
+.dl-card{background:var(--panel);border:1px solid var(--border);border-top:8px solid var(--acid);padding:clamp(20px,3vw,34px)}
+.dl-card h2{font:900 clamp(27px,3.6vw,42px)/1.02 Arial,sans-serif;letter-spacing:-.045em;margin:12px 0 16px}
+.dl-card>p{color:var(--muted);font-size:14px;margin:0}
+.dl-kicker{font:700 11px/1.6 "Courier New",monospace;color:var(--acid);letter-spacing:.14em}
+.dl-actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 0}
+.dl-code{background:#141613;border:1px solid var(--border);color:var(--acid);font:12px/2 "Courier New",monospace;padding:16px 18px;overflow-x:auto;margin:20px 0 0;white-space:pre}
+.dl-side{display:flex;flex-direction:column;gap:18px}
+.dl-mini{background:var(--panel);border:1px solid var(--border);padding:22px}
+.dl-mini h3{font:800 11px/1.5 "Courier New",monospace;color:var(--acid);letter-spacing:.14em;margin:0 0 14px;text-transform:uppercase}
+.dl-list{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+.dl-list li{margin:9px 0}
+.dl-list strong{color:var(--ink);font-weight:700}
+.dl-hash{font:11px/1.9 "Courier New",monospace;color:#93a08a;word-break:break-all;margin:14px 0 0}
+.dl-note{color:var(--muted);font:12px/1.9 "Courier New",monospace;margin:0 0 40px}
+@media(max-width:900px){.dl-grid{grid-template-columns:1fr}.dl-decor{display:none}}

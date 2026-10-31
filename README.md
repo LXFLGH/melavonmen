@@ -23,6 +23,7 @@ experiments/typewriter/         墙上的打字机（three.js，单文件 + thre
 experiments/crt-terminal/       CRT-1520 荧光终端（单文件自包含）
 experiments/reactor-control-room/  第一人称反应堆控制室（index.html + css/ + js/ + vendor/）
 heatmap.html        贡献热力图（自包含单页，保留 JS 数据逻辑，酸性主题内联）
+downloads.html      下载页（skill 归档下载、安装步骤、校验值）
 about.html          关于
 posts/              文章（独立 HTML，命名 YYYY-MM-DD-标题.html）
 css/style.css       全站样式（heatmap.html 不使用）
@@ -45,7 +46,7 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 
 ## 页面约定
 
-- 顶部导航顺序：首页 / 游戏 / 艺术 POC / 热力图 / 关于 / GitHub（热力图保持自身的返回首页导航）。
+- 顶部导航顺序：首页 / 游戏 / 艺术 POC / 热力图 / 关于 / 下载 / GitHub（热力图保持自身的返回首页导航）。
 - 新增游戏作品：复制 `games.html` 里的 `<article class="game-card">` 整块，改标题、状态徽章、要点列表与 `meta-grid` 元信息；`nav-card is-placeholder` 是空位占位样式。
 - FCN 作品条目可通过 `games.html#fcn` 直达；截图区为 `games.html#fcn-screenshots`，关于页的 FCN 介绍链接到此处。
 - 截图使用原始 PNG，属于 2026-10-09 的 Windows Godot 历史实机画面，1200 × 760；按主页、农场、编辑器、任务、仓库、商店、股市、银行、手册、设置、剧情展示。截图不是 HTML demo，也不作为完整功能或动画验证的证据。
@@ -67,6 +68,14 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 - Artless：当前仓库是黑白线稿地牢、卡牌与手绘卡牌技术原型；商旅/动态经济是游戏构想，不应写作已实现。
 - 飞跃幻想乡：当前仓库已有 HD-2D 城镇漫游和分区加载原型；魔理沙扫帚飞行与完整探索游戏尚未由现有 README 证实。
 - 开发日志保留其历史时间背景。要修改进度信息时一并检查首页、关于页、游戏页和本说明，修改截图时另核对实际图片与采集时间。
+
+## 下载页与 skill 发布（2026-10-31）
+
+- `downloads.html`：下载入口页，Acid Graphics 版式，卡片化展示版本、体积、sha256、安装命令与包内结构。
+- GitHub Release `v2.3.1`（标记为 latest）：资产 `melavonmen-2.3.1.zip`，43,753 B，sha256 `69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b`。
+  - 直链：`https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip`
+  - 说明页：`https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1`
+- 发新版流程：本地 `git archive` 出 zip → 建/更新 Release 并上传资产 → 同步 `downloads.html` 的版本号、体积、sha256 与版本历史 → 更新本段。
 
 ## melavonmen Skill 归档（2026-10-30）
 

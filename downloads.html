@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>下载 / DOWNLOADS · Melavonmen</title>
+<meta name="description" content="Melavonmen 的下载页：AI Agent Work Stream skill「melavonmen 2.3.1」归档下载、安装步骤与完整性校验值。">
+<meta name="theme-color" content="#10110f">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">Melavonmen</a>
+    <nav aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="games.html">游戏</a>
+      <a href="art-poc.html">艺术 POC</a>
+      <a href="heatmap.html">热力图</a>
+      <a href="about.html">关于</a>
+      <a href="downloads.html" class="active" aria-current="page">下载</a>
+      <a href="https://github.com/LXFLGH" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="page-head dl-hero">
+    <p class="eyebrow">MELAVONMEN / DOWNLOADS / 001</p>
+    <h1>下载 <span>DOWNLOADS.</span></h1>
+    <p class="sub">这里放可以直接拿走的东西。目前只有一件：AI Agent Work Stream skill <strong>melavonmen 2.3.1</strong> —— 一套面向长期项目的文档 / Wiki / 素材交付纪律，附带 5 个离线校验器。</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip">下载 skill 2.3.1 ↓</a>
+      <a class="btn" href="https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1" target="_blank" rel="noopener noreferrer">Release 说明 ↗</a>
+    </div>
+    <div class="dl-decor" aria-hidden="true">↓</div>
+  </section>
+
+  <section class="dl-grid">
+    <article class="dl-card" aria-labelledby="skill-title">
+      <p class="dl-kicker">SKILL / AGENT WORK STREAM</p>
+      <h2 id="skill-title">melavonmen 2.3.1</h2>
+      <p>需求编译、文档先行、Doc↔Wiki 双向同步、素材一图一文件交付。装上之后，Agent 会在动手前先读文档与索引，改完必须回写契约并跑校验。</p>
+      <div class="lab-tags" aria-label="内容标签">
+        <span>DOC / WIKI</span><span>5 CLI VALIDATORS</span><span>PY 3.10+ STDLIB</span><span>18 TESTS</span>
+      </div>
+      <div class="dl-actions">
+        <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip">下载 .zip · 43,753 B ↓</a>
+        <a class="btn" href="https://github.com/LXFLGH/melavonmen/tree/main/skill/melavonmen" target="_blank" rel="noopener noreferrer">浏览包内容 ↗</a>
+      </div>
+      <pre class="dl-code">unzip melavonmen-2.3.1.zip
+cp -R melavonmen-2.3.1/. ~/.workbuddy/skills/melavonmen/
+python -m unittest discover -s ~/.workbuddy/skills/melavonmen/scripts/tests -v
+<span style="color:#93a08a"># 18 tests, 0 failed → 安装完成</span></pre>
+      <p class="dl-hash">sha256 69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b</p>
+    </article>
+
+    <div class="dl-side">
+      <article class="dl-mini">
+        <h3>本版要点 / 2.3.1</h3>
+        <ul class="dl-list">
+          <li><strong>素材一图一文件</strong>：贴图、图标、立绘、瓦片各自独立成文件，禁止混装。</li>
+          <li><strong>精灵表是唯一例外</strong>：多帧合图必须带 atlas 元数据、逐帧源文件与 <code>kind:"sprite_sheet"</code> 登记。</li>
+          <li><strong>Wiki 解耦</strong>：一页一源文件、事实唯一副本；可读性排序 AI 可读 → 机器可解析 → 人类可读。</li>
+          <li><strong>validate_assets</strong>：核 sprites、atlas 帧数与越界、尺寸/哈希、逐帧源存在性。</li>
+        </ul>
+      </article>
+      <article class="dl-mini">
+        <h3>包内结构</h3>
+        <ul class="dl-list">
+          <li><code>SKILL.md</code> — 入口与 7 条硬规则</li>
+          <li><code>references/</code> — 11 篇按需加载规则</li>
+          <li><code>scripts/</code> — index / schema / symbols / assets / drift</li>
+          <li><code>templates/</code> — Doc、Wiki、素材清单样板</li>
+        </ul>
+      </article>
+      <article class="dl-mini">
+        <h3>版本与历史</h3>
+        <ul class="dl-list">
+          <li><strong>2.3.1</strong> — 精灵表契约 + 素材校验器（2026-10-30）</li>
+          <li><strong>2.3.0</strong> — Wiki 解耦与可读性优先级</li>
+          <li><strong>2.2.0</strong> — 素材一图一文件</li>
+        </ul>
+        <p class="dl-hash">旧版本见 <a href="https://github.com/LXFLGH/melavonmen/releases" target="_blank" rel="noopener noreferrer" style="color:#dcff46">Releases ↗</a></p>
+      </article>
+    </div>
+  </section>
+
+  <p class="dl-note">校验器只做机器可验证的部分：索引、路由、Python 签名、素材清单与哈希。跨语言签名、像素内容是否“一图一素材”、业务语义正确性仍需人工复核 —— 0 errors 不等于全都对。</p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>© 2026 Melavonmen · DOWNLOADS · <a href="index.html">返回首页 ↑</a></p></div>
+</footer>
+</body>
+</html>
