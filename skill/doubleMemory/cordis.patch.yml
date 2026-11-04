@@ -1,0 +1,4 @@
+- insert:
+    - id: doublememory
+      name: 'doublememory'
+      config: {}
