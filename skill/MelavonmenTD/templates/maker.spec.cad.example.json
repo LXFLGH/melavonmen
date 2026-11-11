@@ -1,0 +1,85 @@
+{
+  "schema": "maker.spec/v1",
+  "name": "industrial-terminal",
+  "unit_mm": 100,
+  "refs": [
+    {
+      "id": "r1",
+      "path": "ref/terminal-concept.jpg",
+      "claims": [
+        "chassis is steel sheet with mounting flange on the side",
+        "CRT monitor housed in sculpted curved bezel",
+        "keyboard with 64 cylindrical keycaps arrayed on lower deck"
+      ]
+    }
+  ],
+  "parts": [
+    {
+      "name": "mount_flange",
+      "owner": "cad",
+      "bbox_mm": {
+        "x": [158, 162],
+        "y": [38, 42],
+        "z": [158, 162]
+      },
+      "cad": {
+        "recipe": "mechanical.flange",
+        "preset": "nominal",
+        "params": {
+          "outer_d": 160.0,
+          "bore_d": 80.0,
+          "bolt_circle_d": 130.0,
+          "bolt_holes": 6,
+          "bolt_hole_d": 18.0,
+          "plate_t": 16.0,
+          "hub_d": 100.0,
+          "hub_h": 24.0
+        },
+        "quality": "deliver",
+        "formats": "glb,step"
+      }
+    },
+    {
+      "name": "front_bezel",
+      "owner": "blend",
+      "src": "blend/bezel.blend",
+      "bbox_mm": {
+        "x": [380, 385],
+        "y": [40, 45],
+        "z": [280, 285]
+      },
+      "tris": 12000
+    },
+    {
+      "name": "keycaps",
+      "owner": "js",
+      "recipe": "capGeometry(18, 18)",
+      "count": 64,
+      "tris": 8192
+    }
+  ],
+  "scene": {
+    "tone": "aces/0.95",
+    "shadows": "pcf-soft",
+    "env": "procedural-room"
+  },
+  "shots": [
+    {
+      "name": "hero",
+      "cam": "auto",
+      "dir": [0.4, 0.3, 1.0],
+      "margin": 0.12,
+      "coverage": [0.25, 0.6]
+    },
+    {
+      "name": "flange_detail",
+      "cam": "auto",
+      "clip": "window.__scene.flange"
+    }
+  ],
+  "budgets": {
+    "calls": 200,
+    "tris": 120000,
+    "texel": 1.2
+  }
+}

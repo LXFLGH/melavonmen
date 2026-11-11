@@ -1,0 +1,30 @@
+{
+  "schema": "maker.spec/v1",
+  "name": "ibm-5120",
+  "unit_mm": 118,
+  "refs": [
+    {
+      "id": "r1",
+      "path": "ref/ibm5120-wiki.jpg",
+      "claims": [
+        "front panel inclined ~8 deg from vertical",
+        "two 8-inch drives, vertical slots, levers at the bottom",
+        "keyboard recessed in the deck, front lip acts as palm rest",
+        "deck flows into the body with a large radius, no hard 90 edge"
+      ]
+    }
+  ],
+  "parts": [
+    { "name": "shell", "owner": "js", "bbox_mm": { "x": [444, 448], "y": [505, 509], "z": [202, 204] } },
+    { "name": "panel", "owner": "js", "bbox_mm": { "x": [400, 402], "y": [152, 154] } },
+    { "name": "keycaps", "owner": "js", "recipe": "capGeometry(w,h)", "count": 84 },
+    { "name": "fdd_a", "owner": "js" },
+    { "name": "tape", "owner": "js", "assumed": "5120 无内置磁带；按 5110 Model 1 补，取景需要" }
+  ],
+  "scene": { "tone": "aces/0.95", "shadows": "pcf-soft", "env": "procedural-room" },
+  "shots": [
+    { "name": "hero", "cam": "auto", "dir": [0.38, 0.32, 1], "margin": 0.12, "coverage": [0.25, 0.55] },
+    { "name": "screen", "cam": "auto", "clip": "window.CRT.aio.screen" }
+  ],
+  "budgets": { "calls": 250, "tris": 150000, "texel": 1.2 }
+}
