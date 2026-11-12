@@ -70,6 +70,30 @@ class NativeIndexTests(unittest.TestCase):
         self.assertTrue(context(self.root, "src/pricing.py", line=2)["ok"])
         self.assertTrue(doctor(self.root)["ok"])
 
+    def test_godot_uid_signal_and_export_impact(self):
+        # UID sidecar maps a scene reference even when the scene has no path.
+        self.write("game/Hero.gd.uid", "uid://hero001\n")
+        self.write("game/UidOnly.tscn", '[gd_scene format=3]\n'
+                   '[ext_resource type="Script" uid="uid://hero001" id="1"]\n'
+                   '[node name="Hero" type="Node"]\n'
+                   'script = ExtResource("1")\n'
+                   'hit_points = 30\n'
+                   '[connection signal="died" from="." to="." method="_on_died"]\n')
+        update(self.root)
+        db = connect(self.root, readonly=True)
+        edges = list(db.execute(
+            "SELECT kind,target_name,target_file,verification_status "
+            "FROM edges WHERE path='game/UidOnly.tscn'"))
+        db.close()
+        self.assertTrue(any(x["target_file"] == "game/Hero.gd" and
+                            x["kind"] == "resource_reference" for x in edges), edges)
+        self.assertTrue(any(x["kind"] == "connect" and
+                            x["target_name"] == "died" for x in edges), edges)
+        self.assertTrue(any(x["kind"] == "writes" and
+                            x["target_name"] == "hit_points" for x in edges), edges)
+        impact_result = impact(self.root, ["game/Hero.gd"])
+        self.assertIn("game/UidOnly.tscn", impact_result["affected_files"])
+
     def test_godot_scene_edges_and_autoload(self):
         update(self.root)
         db = connect(self.root, readonly=True)
