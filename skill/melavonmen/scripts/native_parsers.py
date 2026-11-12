@@ -254,9 +254,10 @@ def parse_godot(text, path, sha, revision, lang, out):
                     relation(out, path, sha, revision, "godot_literal",
                              kind, target, line, target_file=target[6:] if
                              target.startswith("res://") else None)
-            if "connect(" in value:
+            for m in re.finditer(r'\b([A-Za-z_]\w*)\.connect\s*\(', value):
                 relation(out, path, sha, revision, "godot_lexical",
-                         "connect", value.strip(), line)
+                         "connect", m.group(1), line, status="possible",
+                         expression=value.strip())
         else:
             m = RESOURCE.match(value.strip())
             if m:
@@ -286,6 +287,13 @@ def parse_godot(text, path, sha, revision, lang, out):
                              status="verified", signal=attrs.get("signal"),
                              from_node=attrs.get("from"), to_node=attrs.get("to"),
                              handler_method=attrs.get("method"))
+            # Properties in scene/resource nodes may override @export fields.
+            # This is a possible write until scene/script ownership is resolved.
+            prop = re.match(r'^\s*([A-Za-z_]\w*)\s*=\s*(.+)$', value)
+            if prop and prop.group(1) not in {"script", "load_steps", "format"}:
+                relation(out, path, sha, revision, "godot_resource",
+                         "writes", prop.group(1), line, status="possible",
+                         expression=prop.group(2)[:250])
             for m in re.finditer(r'ExtResource\("([^"]+)"\)', value):
                 relation(out, path, sha, revision, "godot_resource",
                          "resource_reference", resources.get(m.group(1), m.group(1)),
