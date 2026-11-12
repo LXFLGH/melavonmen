@@ -42,12 +42,15 @@ def benchmark(root, database, phrases, runs=5):
                 measurements["query_ms"].append((time.perf_counter() - start) * 1000)
                 measurements["result_estimated_tokens"].append(
                     max(1, len(json.dumps(response, ensure_ascii=False)) // 4))
-                if shutil.which("rg"):
+                # Prefer ripgrep. Every Git worktree has git-grep as a reproducible fallback.
+                external = (["rg", "--no-messages", "--fixed-strings",
+                             "--glob", "!.melavonmen/**", "--glob", "!.git/**",
+                             "--", phrase, str(root)]
+                            if shutil.which("rg") else
+                            ["git", "-C", str(root), "grep", "--fixed-strings", "--", phrase])
+                if shutil.which(external[0]):
                     start_rg = time.perf_counter()
-                    subprocess.run(["rg", "--no-messages", "--fixed-strings",
-                                    "--glob", "!.melavonmen/**", "--glob", "!.git/**",
-                                    "--", phrase, str(root)],
-                                   stdout=subprocess.DEVNULL,
+                    subprocess.run(external, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL, timeout=30)
                     measurements["ripgrep_ms"].append(
                         (time.perf_counter() - start_rg) * 1000)
@@ -60,7 +63,8 @@ def benchmark(root, database, phrases, runs=5):
                     "runs": len(samples)}
         measurements["warm_update"] = dist(measurements.pop("warm_update_ms"))
         measurements["query"] = dist(measurements.pop("query_ms"))
-        measurements["ripgrep_baseline"] = dist(measurements.pop("ripgrep_ms"))
+        measurements["raw_search_baseline"] = dist(measurements.pop("ripgrep_ms"))
+        measurements["raw_search_tool"] = "rg" if shutil.which("rg") else "git grep"
         estimated = measurements.pop("result_estimated_tokens")
         measurements["response_estimated_tokens"] = {
             "p50": round(statistics.median(estimated), 1) if estimated else 0,
@@ -72,7 +76,7 @@ def benchmark(root, database, phrases, runs=5):
         finally:
             indexed_bytes.close()
         measurements["comparison_note"] = (
-            "ripgrep is a repeatable raw-search proxy, NOT a proprietary Codebase Index; "
+            "rg/git grep is a repeatable raw-search proxy, NOT a proprietary Codebase Index; "
             "compare latency and approximate context payload only")
         measurements["stats"] = result["stats"]
         return measurements
