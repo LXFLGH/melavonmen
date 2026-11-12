@@ -25,3 +25,7 @@
 **差异范围**：先以git diff/源文件hash列`changed_source_paths`，结合Doc模块依赖及Wiki调用者形成`affected_contract_ids/affected_wiki_pages`。只读这些部分，不必全库扫描；但涉及公共API应扩展到调用者。
 
 提交前保存机器可追踪结果：`observed_code_changes[], changed_doc[], changed_wiki[], validation_commands[], validation_results[], unverified[], sync_status`。当实际源码与目标合同仍不符时保持`implemented`以下状态，绝不能宣称`verified`。
+
+## Native 增量辅助同步
+
+在实施前用 native_cli impact <path-or-symbol> 扩展静态调用者/资源/继承反向影响，再将相关 Doc 合同标记为待复核（不是自动标 verified）。实施后 update、doctor、sync-status 对比真实文件哈希与 Wiki 中既存 source_path、签名和定位行号；机器判定只产生 tasks[]，业务语义仍须 Agent 逐条确认。现有状态机和权威性规则不变。
