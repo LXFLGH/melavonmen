@@ -163,7 +163,7 @@ class NativeIndexTests(unittest.TestCase):
     def test_tree_sitter_languages(self):
         update(self.root)
         db = connect(self.root, readonly=True)
-        for lang, path in (("typescript", "src/main.ts"), ("c_sharp", "src/main.cs"),
+        for lang, path in (("typescript", "src/main.ts"), ("csharp", "src/main.cs"),
                            ("cpp", "src/main.cpp"), ("gdscript", "game/Hero.gd")):
             record = db.execute("SELECT depth FROM files WHERE path=?", (path,)).fetchone()
             self.assertIsNotNone(record, lang)
