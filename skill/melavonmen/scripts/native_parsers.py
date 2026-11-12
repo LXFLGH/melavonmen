@@ -48,7 +48,7 @@ def evidence(path, sha, revision, method, status, start, end=None):
 
 def declaration(output, path, sha, revision, method, status,
                 name, qualified, kind, signature, start, end, parameters=None,
-                return_type=None):
+                return_type=None, **extra):
     if not name:
         return
     output["symbols"].append({
@@ -56,6 +56,7 @@ def declaration(output, path, sha, revision, method, status,
         "name": name, "qualified_name": qualified, "kind": kind,
         "signature": signature[:1200], "parameters": parameters or [],
         "return_type": return_type, "module": str(Path(path).parent),
+        **extra,
     })
 
 def relation(output, path, sha, revision, method, kind, target,
@@ -290,6 +291,8 @@ GDEXTENDS = re.compile(r'^\s*extends\s+([A-Za-z_][\w.]*)')
 
 def parse_godot(text, path, sha, revision, lang, out):
     resources = {}
+    scene_root = None
+    current_node = None
     for line, value in enumerate(text.splitlines(), 1):
         if lang == "gdscript":
             for regex, kind in ((CLASS, "class"), (SIGNAL, "signal"),
@@ -331,12 +334,31 @@ def parse_godot(text, path, sha, revision, lang, out):
                              uid=attrs.get("uid"))
                 elif section == "node":
                     name = attrs.get("name", "Node")
+                    parent = attrs.get("parent")
+                    if scene_root is None:
+                        scene_root = name
+                    if parent is None:
+                        qualified = name
+                    elif parent == ".":
+                        qualified = scene_root + "/" + name
+                    else:
+                        qualified = scene_root + "/" + parent.strip("/") + "/" + name
+                    current_node = qualified
                     declaration(out, path, sha, revision, "godot_resource",
-                                "verified", name, name, "scene_node",
-                                value.strip(), line, line)
-                    if "instance" in attrs:
+                                "verified", name, qualified, "scene_node",
+                                value.strip(), line, line,
+                                parent_path=parent, node_type=attrs.get("type"),
+                                scene_path=qualified)
+                    instance = re.search(r'\binstance\s*=\s*ExtResource\("([^"]+)"\)', value)
+                    if instance:
+                        identifier = instance.group(1)
+                        target = resources.get(identifier, identifier)
                         relation(out, path, sha, revision, "godot_resource",
-                                 "resource_reference", attrs["instance"], line)
+                                 "resource_reference", target, line,
+                                 target_file=target[6:] if target.startswith("res://") else None,
+                                 scene_node=qualified, scene_instance=True)
+                elif section == "resource":
+                    current_node = None
                 elif section == "connection":
                     relation(out, path, sha, revision, "godot_resource",
                              "connect", attrs.get("signal", ""), line,
@@ -349,11 +371,13 @@ def parse_godot(text, path, sha, revision, lang, out):
             if prop and prop.group(1) not in {"script", "load_steps", "format"}:
                 relation(out, path, sha, revision, "godot_resource",
                          "writes", prop.group(1), line, status="possible",
-                         expression=prop.group(2)[:250])
+                         expression=prop.group(2)[:250],
+                         scene_node=current_node)
             for m in re.finditer(r'ExtResource\("([^"]+)"\)', value):
                 relation(out, path, sha, revision, "godot_resource",
                          "resource_reference", resources.get(m.group(1), m.group(1)),
-                         line, status="possible", resource_id=m.group(1))
+                         line, status="possible", resource_id=m.group(1),
+                         scene_node=current_node)
             for m in re.finditer(r'\b(?:res://)[^"\x27\s,)]+', value):
                 target = m.group(0)
                 relation(out, path, sha, revision, "godot_resource",
