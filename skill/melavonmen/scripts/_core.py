@@ -240,6 +240,7 @@ def symbols(project, errors, warnings, stats):
     if not isinstance(data, dict):
         return
     validated = 0
+    verified_non_python = 0
     unverified = 0
     cache = {}
     inventory_paths = {s.get("path") for s in entries(data.get("sources")) if isinstance(s, dict) and isinstance(s.get("path"), str)}
@@ -277,9 +278,47 @@ def symbols(project, errors, warnings, stats):
                 continue
             decls = entries(item.get("declarations"))
             if src.suffix != ".py":
-                unverified += len(decls)
-                if decls:
-                    warnings.append(f"{item.get('source_path')}: non-Python symbols require external language parser; signatures not certified")
+                try:
+                    from native_parsers import parse_file, language_for
+                    language = language_for(item["source_path"])
+                    if not language:
+                        raise ImportError("no supported parser")
+                    extracted = parse_file(src, item["source_path"], language,
+                                           hashlib.sha256(src.read_bytes()).hexdigest(),
+                                           str(item.get("revision") or "unknown"))
+                except (ImportError, OSError, UnicodeError, ValueError) as exc:
+                    extracted = {"depth": "indexed", "symbols": [], "warnings": [str(exc)]}
+                verified_actual = {
+                    d["qualified_name"]: d for d in extracted["symbols"]
+                    if d.get("verification_status") == "verified"}
+                if extracted["depth"] != "deep":
+                    unverified += len(decls)
+                    if decls:
+                        warnings.append(
+                            f"{item.get('source_path')}: no reliable deep parser; "
+                            + ", ".join(extracted["warnings"])[:200])
+                    continue
+                for declared in decls:
+                    if not isinstance(declared, dict):
+                        errors.append(f"malformed declaration in {path}")
+                        continue
+                    key = declared.get("qualified_name")
+                    real = verified_actual.get(key)
+                    if real is None:
+                        unverified += 1
+                        warnings.append(f"{item.get('source_path')}:{key}: "
+                                        "symbol not statically certified")
+                    elif declared.get("signature") != real["signature"]:
+                        errors.append(f"signature mismatch: {key}: "
+                                      f"documented={declared.get('signature')!r} "
+                                      f"actual={real['signature']!r}")
+                    elif (declared.get("line_start") is not None and
+                          declared["line_start"] != real["line_start"]):
+                        errors.append(f"line drift: {key}: "
+                                      f"documented={declared['line_start']} "
+                                      f"actual={real['line_start']}")
+                    else:
+                        verified_non_python += 1
                 continue
             if src not in cache:
                 try:
@@ -304,6 +343,7 @@ def symbols(project, errors, warnings, stats):
                 else:
                     validated += 1
     stats["verified_python_signatures"] = validated
+    stats["verified_non_python_signatures"] = verified_non_python
     stats["unverified_non_python_signatures"] = unverified
 
 
