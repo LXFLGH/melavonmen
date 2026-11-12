@@ -45,3 +45,21 @@ python skill/melavonmen/scripts/detect_doc_drift.py --project /path/to/game-proj
 ```
 
 仅支持Python AST形式的函数签名静态核对。其他语言仅进行源码SHA层面的过期检测，不能假称其语义通过验证。素材检查能证明“清单与文件一致、每项声明只含一个素材”，**不能**从像素内容证明一张图里没塞多个素材 —— 交付前仍需按类别目视抽检。使用wiki需根据模板先建立真实来源索引和SHA；模板里的占位字段须替换。
+
+## Native Codebase Intelligence（开发分支附加能力）
+
+新增 [Native 索引合同](docs/native-index-contract.md) 和 [CLI/MCP/四种 Harness 安装指南](docs/mcp-setup.md)。
+这是 v2.3.1 基线上附加的开发中子系统；原有 Doc/Wiki 规则和五个验证器不删除或降级。
+
+```bash
+python scripts/native_cli.py --project /path/to/repo build
+python scripts/native_cli.py --project /path/to/repo audit
+python scripts/native_cli.py --project /path/to/repo query calculate_price --mode symbol --limit 5
+python scripts/native_cli.py --project /path/to/repo impact src/pricing.py
+python scripts/native_cli.py --project /path/to/repo benchmark --runs 5
+python -m unittest discover -s scripts/tests -v
+```
+
+缓存位于目标项目 .melavonmen/ 下；请将该目录加入项目 .gitignore。旧 Wiki 根索引不自动覆盖，export-routes 只输出独立的机器生成侧车。可选的 Tree-sitter 语法树、MCP SDK、Embedding 按需单独安装。Python 3.11+ 推荐；Python 3.10 的 TOML 解析需额外 tomli。
+
+范围声明：静态索引即使在测试通过后也不能证明运行时动态派发、反射、Godot 节点路径或跨语言依赖完全可解析。Doc 业务语义和 Wiki 深度解释仍须审核；全文件覆盖率不等于全符号语义覆盖率。
