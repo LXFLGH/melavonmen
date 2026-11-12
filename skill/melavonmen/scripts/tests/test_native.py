@@ -163,6 +163,28 @@ class NativeIndexTests(unittest.TestCase):
         self.assertEqual(done["stats"]["current_dirty_sources"], 0)
         self.assertEqual(done["stats"]["recorded_dirty_sources"], 0)
 
+    def test_same_content_rename_retains_provenance_and_deletes_old(self):
+        update(self.root)
+        old = self.root / "src" / "settings.toml"
+        new = self.root / "src" / "设置 (renamed).toml"
+        old.rename(new)
+        result = update(self.root)
+        self.assertTrue(result["ok"])
+        self.assertIn({"from": "src/settings.toml",
+                       "to": "src/设置 (renamed).toml"}, result["renamed"])
+        self.assertIn("src/settings.toml", result["deleted"])
+        self.assertFalse(query(self.root, "src/settings.toml", mode="path")["results"])
+        self.assertTrue(query(self.root, "src/设置 (renamed).toml", mode="path")["results"])
+
+    def test_two_simultaneous_index_writers_transactional(self):
+        from concurrent.futures import ThreadPoolExecutor
+        # Writer lock, schema setup and FTS mutations must not corrupt SQLite.
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(update, self.root) for _ in range(2)]
+            reports = [f.result(timeout=45) for f in futures]
+        self.assertTrue(all(x["ok"] for x in reports), reports)
+        self.assertTrue(doctor(self.root)["ok"])
+
     def test_incremental_reparse_and_delete(self):
         update(self.root)
         self.write("src/pricing.py", "def new_price(amount):\n    return amount + 1\n")
