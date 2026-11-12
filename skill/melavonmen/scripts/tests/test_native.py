@@ -105,6 +105,29 @@ class NativeIndexTests(unittest.TestCase):
         db.close()
         self.assertIn("game/Hero.tscn", impact(self.root, ["game/Hero.gd"])["affected_files"])
 
+    def test_parallel_git_worktrees_do_not_share_writable_indexes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            secondary = Path(tmp) / "secondary"
+            subprocess.run(["git", "-C", str(self.root), "worktree", "add",
+                            "-q", "-b", "parallel", str(secondary), "HEAD"],
+                           check=True)
+            try:
+                base = update(self.root)
+                other = update(secondary)
+                self.assertTrue(base["ok"] and other["ok"])
+                self.assertNotEqual((self.root / ".melavonmen/index.sqlite").resolve(),
+                                    (secondary / ".melavonmen/index.sqlite").resolve())
+                (secondary / "src/pricing.py").write_text(
+                    "def separate(): return 99\n", encoding="utf-8")
+                changed = update(secondary)
+                self.assertEqual(changed["stats"]["current_dirty_sources"], 1)
+                self.assertTrue(doctor(self.root)["ok"])
+                self.assertTrue(query(self.root, "calculate_price", mode="definition")["results"])
+                self.assertFalse(query(secondary, "calculate_price", mode="definition")["results"])
+            finally:
+                subprocess.run(["git", "-C", str(self.root), "worktree", "remove",
+                                "--force", str(secondary)], check=True)
+
     def test_git_head_and_worktree_dirty_state_are_separate(self):
         initial = update(self.root)
         self.assertEqual(initial["stats"]["current_dirty_sources"], 0)
