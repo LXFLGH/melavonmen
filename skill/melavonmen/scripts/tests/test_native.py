@@ -122,7 +122,8 @@ class NativeIndexTests(unittest.TestCase):
         update(self.root)
         self.assertTrue(doctor(self.root)["ok"])
         db = connect(self.root)
-        db.execute("DELETE FROM files WHERE path='src/pricing.py'")
+        for table in ("symbols", "edges", "code_fts", "files"):
+            db.execute("DELETE FROM " + table + " WHERE path=?", ("src/pricing.py",))
         db.commit()
         db.close()
         report = doctor(self.root)
