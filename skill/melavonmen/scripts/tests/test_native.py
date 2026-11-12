@@ -70,6 +70,23 @@ class NativeIndexTests(unittest.TestCase):
         self.assertTrue(context(self.root, "src/pricing.py", line=2)["ok"])
         self.assertTrue(doctor(self.root)["ok"])
 
+    def test_scene_tree_hierarchical_node_paths(self):
+        self.write("game/Nested.tscn",
+                   '[gd_scene format=3]\n'
+                   '[node name="Root" type="Node2D"]\n'
+                   '[node name="Sprite" type="Sprite2D" parent="."]\n'
+                   '[node name="Child" type="Node" parent="Sprite"]\n')
+        update(self.root)
+        db = connect(self.root, readonly=True)
+        nodes = list(db.execute(
+            "SELECT qualified_name,extra FROM symbols WHERE path=? AND kind='scene_node'",
+            ("game/Nested.tscn",)))
+        db.close()
+        names = {x["qualified_name"] for x in nodes}
+        self.assertEqual(names, {"Root", "Root/Sprite", "Root/Sprite/Child"})
+        by_name = {r["qualified_name"]: json.loads(r["extra"]) for r in nodes}
+        self.assertEqual(by_name["Root/Sprite/Child"]["parent_path"], "Sprite")
+
     def test_godot_uid_signal_and_export_impact(self):
         # UID sidecar maps a scene reference even when the scene has no path.
         self.write("game/Hero.gd.uid", "uid://hero001\n")
