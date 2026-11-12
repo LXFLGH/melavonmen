@@ -105,6 +105,24 @@ class NativeIndexTests(unittest.TestCase):
         db.close()
         self.assertIn("game/Hero.tscn", impact(self.root, ["game/Hero.gd"])["affected_files"])
 
+    def test_git_head_and_worktree_dirty_state_are_separate(self):
+        initial = update(self.root)
+        self.assertEqual(initial["stats"]["current_dirty_sources"], 0)
+        committed = initial["stats"]["committed_revision"]
+        self.write("src/pricing.py", "def calculate_price(): return 100\n")
+        pending = update(self.root)
+        self.assertEqual(pending["stats"]["committed_revision"], committed)
+        self.assertEqual(pending["stats"]["current_dirty_sources"], 1)
+        self.assertEqual(pending["stats"]["recorded_dirty_sources"], 1)
+        subprocess.run(["git", "-C", str(self.root), "add", "src/pricing.py"], check=True)
+        subprocess.run(["git", "-C", str(self.root),
+                        "-c", "user.name=CI", "-c", "user.email=ci@example.invalid",
+                        "commit", "-qm", "modify"], check=True)
+        done = update(self.root)
+        self.assertNotEqual(done["stats"]["committed_revision"], committed)
+        self.assertEqual(done["stats"]["current_dirty_sources"], 0)
+        self.assertEqual(done["stats"]["recorded_dirty_sources"], 0)
+
     def test_incremental_reparse_and_delete(self):
         update(self.root)
         self.write("src/pricing.py", "def new_price(amount):\n    return amount + 1\n")
