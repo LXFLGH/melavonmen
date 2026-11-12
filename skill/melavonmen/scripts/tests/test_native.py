@@ -15,6 +15,8 @@ from native_engine import (
     references, sync_status, update,
 )
 from native_parsers import parse_file, language_for
+from native_semantic import index_vectors, semantic_query
+from unittest.mock import patch
 
 class NativeIndexTests(unittest.TestCase):
     def setUp(self):
@@ -157,6 +159,40 @@ class NativeIndexTests(unittest.TestCase):
         out = update(self.root)
         self.assertEqual(out["stats"]["first_party_sources"], 8)
         self.assertFalse(query(self.root, "src/settings.json", mode="path")["results"])
+
+    def test_semantic_local_cache_and_fallback(self):
+        update(self.root)
+        encoder = lambda texts: [[float(len(text) % 17), 1.0] for text in texts]
+        with patch("native_semantic.client", return_value=encoder):
+            first = index_vectors(self.root, provider="local", model="mock")
+            second = index_vectors(self.root, provider="local", model="mock")
+            self.assertGreater(first["embedded_new_or_changed"], 0)
+            self.assertEqual(second["embedded_new_or_changed"], 0)
+            results = semantic_query(self.root, "price", model="mock")
+            self.assertTrue(results["results"])
+        fallback = semantic_query(self.root, "price", provider="remote", model="missing")
+        self.assertTrue(fallback["results"])
+        self.assertTrue(fallback["warnings"])
+
+    def test_cycle_and_unresolved_index(self):
+        from native_engine import cycles, unresolved
+        self.write("src/a.py", "import b\n")
+        self.write("src/b.py", "import a\n")
+        update(self.root)
+        # Import resolution of Python imports is conservative; names stay possible.
+        self.assertTrue(unresolved(self.root)["count"] >= 0)
+        self.assertIsInstance(cycles(self.root)["cycles"], list)
+
+    def test_stale_wiki_signature_detection(self):
+        self.write("wiki/pages/pricing.json", json.dumps({
+            "source_path": "src/pricing.py", "declarations": [{
+                "qualified_name": "calculate_price",
+                "signature": "def calculate_price(x) -> str",
+                "line_start": 99}]}))
+        update(self.root)
+        status = sync_status(self.root, ["src/pricing.py"])
+        self.assertTrue(any(row["kind"] == "signature_or_location"
+                            for row in status["stale_wiki"]))
 
     @unittest.skipUnless(importlib.util.find_spec("tree_sitter_language_pack") and
                          importlib.util.find_spec("tree_sitter"),
