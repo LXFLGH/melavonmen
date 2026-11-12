@@ -12,7 +12,7 @@ import re
 import tomllib
 from pathlib import Path
 
-PARSER_VERSION = "native-2"
+PARSER_VERSION = "native-3"
 LANGUAGES = {
     ".py": "python", ".gd": "gdscript", ".js": "javascript", ".jsx": "javascript",
     ".mjs": "javascript", ".cjs": "javascript", ".ts": "typescript",
@@ -73,6 +73,28 @@ def parse_python(text, path, sha, revision, out):
             return ast.unparse(n)
         except Exception:
             return "unknown"
+    def parameters(args):
+        entries = []
+        positional = [*args.posonlyargs, *args.args]
+        first_default = len(positional) - len(args.defaults)
+        for i, arg in enumerate(positional):
+            default = args.defaults[i - first_default] if i >= first_default else None
+            entries.append({"name": arg.arg,
+                            "type": label(arg.annotation) if arg.annotation else "unknown",
+                            "default": label(default) if default is not None else None})
+        if args.vararg:
+            entries.append({"name": "*" + args.vararg.arg,
+                            "type": label(args.vararg.annotation) if args.vararg.annotation else "unknown",
+                            "default": None})
+        for arg, default in zip(args.kwonlyargs, args.kw_defaults):
+            entries.append({"name": arg.arg,
+                            "type": label(arg.annotation) if arg.annotation else "unknown",
+                            "default": label(default) if default is not None else None})
+        if args.kwarg:
+            entries.append({"name": "**" + args.kwarg.arg,
+                            "type": label(args.kwarg.annotation) if args.kwarg.annotation else "unknown",
+                            "default": None})
+        return entries
     def walk(body, prefix=""):
         for node in body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -90,7 +112,10 @@ def parse_python(text, path, sha, revision, out):
                     signature += (" -> " + label(node.returns)) if node.returns else ""
                 declaration(out, path, sha, revision, "python_ast", "verified",
                             node.name, qualified, kind, signature,
-                            node.lineno, node.end_lineno)
+                            node.lineno, node.end_lineno,
+                            parameters=None if isinstance(node, ast.ClassDef) else parameters(node.args),
+                            return_type=(label(node.returns) if not isinstance(node, ast.ClassDef)
+                                         and node.returns else "unknown"))
                 walk(node.body, qualified + ".")
             elif isinstance(node, (ast.Import, ast.ImportFrom)):
                 names = [x.name for x in node.names]
@@ -166,24 +191,55 @@ def parse_tree_sitter(text, path, sha, revision, language, out):
             if name and len(name) <= 256 and "\n" not in name:
                 qualified = prefix + name
                 first = data(node).split("{", 1)[0].split("\n", 1)[0].strip()
+                parameter_nodes = field(node, "parameters")
+                parameters = []
+                if parameter_nodes:
+                    for item in parameter_nodes.named_children:
+                        pname = field(item, "name") or field(item, "pattern")
+                        ptype = field(item, "type")
+                        default = field(item, "value") or field(item, "default_value")
+                        parameters.append({
+                            "name": data(pname) if pname else data(item).split(":", 1)[0][:128],
+                            "type": data(ptype) if ptype else "unknown",
+                            "default": data(default) if default else None})
+                result_type = field(node, "return_type") or field(node, "type")
                 declaration(out, path, sha, revision, "tree_sitter", status,
                             name, qualified, kind, first,
-                            node.start_point.row + 1, node.end_point.row + 1)
+                            node.start_point.row + 1, node.end_point.row + 1,
+                            parameters=parameters,
+                            return_type=data(result_type) if result_type else "unknown")
                 if kind in {"class", "interface", "struct"}:
                     new_prefix = qualified + "."
         if node.type in IMPORT_NODES:
             value = data(node)
-            # A precise import statement is evidence; target module resolution is separate.
+            source = re.search(r'\bfrom\s*["\x27]([^"\x27]+)', value)
+            if not source:
+                source = re.search(r'[#]include\s*[<"]([^>"]+)', value)
+            if not source:
+                source = re.search(r'^\s*(?:using|import)\s+([\w.]+)\s*;', value)
+            target = source.group(1) if source else value.strip()
             relation(out, path, sha, revision, "tree_sitter", "imports",
-                     value.strip(), node.start_point.row + 1)
+                     target, node.start_point.row + 1,
+                     statement=value.strip()[:400])
         if node.type in CALL_NODES:
             fn = field(node, "function") or field(node, "name")
             if fn is not None:
                 relation(out, path, sha, revision, "tree_sitter", "calls",
                          data(fn), node.start_point.row + 1)
-        if node.type in {"base_class_clause", "base_list", "superclasses"}:
+        if node.type in {"base_class_clause", "base_list", "superclasses",
+                         "base_type", "base_class"}:
             relation(out, path, sha, revision, "tree_sitter", "inherits",
                      data(node), node.start_point.row + 1)
+        if node.type in {"implements_clause", "interface_list"}:
+            relation(out, path, sha, revision, "tree_sitter", "implements",
+                     data(node), node.start_point.row + 1)
+        if node.type in {"export_statement", "export_declaration"}:
+            relation(out, path, sha, revision, "tree_sitter", "exports",
+                     data(node).split("\n", 1)[0][:400], node.start_point.row + 1)
+        if node.type in {"identifier", "property_identifier", "type_identifier"}:
+            if len(out["edges"]) < 3000:
+                relation(out, path, sha, revision, "tree_sitter", "references",
+                         data(node), node.start_point.row + 1, status="possible")
         for child in node.named_children:
             walk(child, new_prefix, depth + 1)
     walk(tree.root_node)
