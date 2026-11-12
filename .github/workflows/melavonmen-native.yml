@@ -1,0 +1,43 @@
+name: Melavonmen Native Intelligence
+on:
+  push:
+    branches: [main, feat/native-codebase-intelligence]
+    paths:
+      - 'skill/melavonmen/**'
+      - '.github/workflows/melavonmen-native.yml'
+  pull_request:
+    paths:
+      - 'skill/melavonmen/**'
+      - '.github/workflows/melavonmen-native.yml'
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Optional language and MCP adapters
+        run: python -m pip install --upgrade 'tree-sitter>=0.25,<1' 'tree-sitter-language-pack>=1.19,<2' 'PyYAML>=6,<7' 'mcp>=2,<3'
+      - name: Test legacy and native capabilities
+        run: python -m unittest discover -s skill/melavonmen/scripts/tests -v
+      - name: Build and audit repository index
+        run: |
+          python skill/melavonmen/scripts/native_cli.py --project . build > /tmp/native-build.json
+          python skill/melavonmen/scripts/native_cli.py --project . check > /tmp/native-check.json
+          python skill/melavonmen/scripts/native_cli.py --project . doctor > /tmp/native-doctor.json
+          python skill/melavonmen/scripts/native_cli.py --project . query native --limit 5 > /tmp/native-query.json
+          python skill/melavonmen/scripts/native_cli.py --project . benchmark --runs 3 --phrase native > /tmp/native-benchmark.json
+      - name: Upload reproducible reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-ci-${{ matrix.python }}
+          path: /tmp/native-*.json
+          if-no-files-found: ignore
