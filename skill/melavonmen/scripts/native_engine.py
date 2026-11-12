@@ -174,22 +174,41 @@ def connect(root, dbpath=None, readonly=False):
                          uri=readonly, timeout=30)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA busy_timeout=30000")
-    if not readonly:
-        db.execute("PRAGMA journal_mode=WAL")
-        db.execute("PRAGMA foreign_keys=ON")
-        db.executescript(SCHEMA)
-        version = db.execute("SELECT value FROM metadata WHERE key='schema'").fetchone()
-        if version and version["value"] != SCHEMA_VERSION:
-            db.close()
-            raise ValueError("index schema mismatch: use rebuild/doctor")
-        db.execute("INSERT OR REPLACE INTO metadata VALUES('schema',?)", (SCHEMA_VERSION,))
-        db.commit()
-    else:
-        version = db.execute("SELECT value FROM metadata WHERE key='schema'").fetchone()
-        if not version or version["value"] != SCHEMA_VERSION:
-            db.close()
-            raise ValueError("index schema mismatch: use rebuild/doctor")
-    return db
+    try:
+        if not readonly:
+            # Two Agents may initialize a fresh database concurrently. SQLite's
+            # busy_timeout does not always cover PRAGMA journal mode transitions.
+            # Retry transient setup locks without deleting/replacing any files.
+            for attempt in range(30):
+                try:
+                    mode = db.execute("PRAGMA journal_mode").fetchone()[0]
+                    if mode.lower() != "wal":
+                        db.execute("PRAGMA journal_mode=WAL")
+                    db.execute("PRAGMA foreign_keys=ON")
+                    db.executescript(SCHEMA)
+                    version = db.execute(
+                        "SELECT value FROM metadata WHERE key='schema'").fetchone()
+                    if version and version["value"] != SCHEMA_VERSION:
+                        raise ValueError("index schema mismatch: use migrate/rebuild")
+                    db.execute("INSERT OR REPLACE INTO metadata VALUES('schema',?)",
+                               (SCHEMA_VERSION,))
+                    db.commit()
+                    break
+                except sqlite3.OperationalError as exc:
+                    db.rollback()
+                    if ("locked" not in str(exc).lower() and
+                            "busy" not in str(exc).lower()) or attempt == 29:
+                        raise
+                    time.sleep(min(.05 * (attempt + 1), .5))
+        else:
+            version = db.execute(
+                "SELECT value FROM metadata WHERE key='schema'").fetchone()
+            if not version or version["value"] != SCHEMA_VERSION:
+                raise ValueError("index schema mismatch: use migrate/rebuild")
+        return db
+    except Exception:
+        db.close()
+        raise
 
 def _rows(db, table, sql="", args=()):
     return [dict(row) for row in db.execute("SELECT * FROM " + table + " " + sql, args)]
