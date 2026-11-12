@@ -232,7 +232,19 @@ def main(argv=None):
             result = benchmark(root, args.database, args.phrase or
                                ["calculate", "load", "class_name"], args.runs)
         if args.human:
-            print(json.dumps(result, ensure_ascii=False, indent=2))
+            if isinstance(result, dict) and isinstance(result.get("results"), list):
+                for entry in result["results"]:
+                    location = f"{entry.get('path', '?')}:{entry.get('line_start', 1)}"
+                    symbol = entry.get("symbol") or entry.get("target_name") or ""
+                    score = f"{entry['score']:.2f} " if "score" in entry else ""
+                    print(f"{score}{location}  {entry.get('kind', '')}  "
+                          f"{symbol} [{entry.get('verification_status', 'unknown')}]")
+                if result.get("truncated"):
+                    print(f"More results: --offset {result.get('next_offset')}")
+                for warning in result.get("warnings", []):
+                    print(f"WARNING: {warning}", file=sys.stderr)
+            else:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
         else:
             print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
         return 1 if isinstance(result, dict) and result.get("ok") is False else 0
