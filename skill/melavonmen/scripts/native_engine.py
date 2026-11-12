@@ -366,36 +366,60 @@ def doctor(root):
                 "recovery": "Back up existing .melavonmen directory; run rebuild with explicit permission"}
 
 def rebuild(root, dbpath=None):
+    """Rebuild in a sibling database; leave a consistent backup of old contents.
+
+    WAL sidecars of the replaced target must not be left attached to a new main
+    database. If a concurrent reader/writer prevents a safe checkpoint, fail
+    closed rather than delete the old index or the other Agent's state.
+    """
     root = Path(root).resolve()
     rel = dbpath or ".melavonmen/index.sqlite"
     target = inside(root, rel)
     target.parent.mkdir(parents=True, exist_ok=True)
-    # Build into a sibling and preserve the old DB until its replacement is valid.
-    stage = target.with_name(target.name + ".stage-" + str(os.getpid()))
+    stage = target.with_name(target.name + ".stage-" + str(os.getpid()) + "-" +
+                             str(time.time_ns()))
     stage_rel = stage.relative_to(root).as_posix()
     try:
         report = update(root, stage_rel, full=True)
         if not report["ok"]:
             raise RuntimeError("staging index failed audit")
-        staged = sqlite3.connect(str(stage))
-        valid = staged.execute("PRAGMA integrity_check").fetchone()[0]
-        staged.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        staged.close()
-        if valid != "ok":
-            raise RuntimeError("staging integrity failed")
-        # Readers of the old WAL might be active; preserve a backup, never unlink
-        # an existing user DB as a side effect of a failed rebuild.
+        staged = sqlite3.connect(str(stage), timeout=30)
+        try:
+            valid = staged.execute("PRAGMA integrity_check").fetchone()[0]
+            checkpoint = staged.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if valid != "ok" or (checkpoint is not None and checkpoint[0]):
+                raise RuntimeError("staging database failed integrity/checkpoint")
+            mode = staged.execute("PRAGMA journal_mode=DELETE").fetchone()[0]
+            if mode != "delete":
+                raise RuntimeError("staging journal mode conversion failed")
+        finally:
+            staged.close()
         if target.exists():
-            import shutil
-            backup = target.with_name(target.name + ".backup-" + str(int(time.time())))
-            shutil.copy2(target, backup)
+            backup = target.with_name(target.name + ".backup-" + str(time.time_ns()))
+            # A genuine SQLite backup includes any uncheckpointed WAL changes.
+            old = sqlite3.connect(str(target), timeout=30)
+            try:
+                old.execute("PRAGMA busy_timeout=30000")
+                with sqlite3.connect(str(backup)) as archive:
+                    old.backup(archive)
+                # Switching out of WAL obtains the necessary lock and clears
+                # the old sidecars. Do not replace a busy WAL database.
+                old.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                mode = old.execute("PRAGMA journal_mode=DELETE").fetchone()[0]
+                if mode != "delete":
+                    raise RuntimeError("existing index is busy; retained old DB and backup")
+            finally:
+                old.close()
             report["backup"] = str(backup.relative_to(root))
+        # A single atomic rename installs the new database.
         os.replace(stage, target)
         report["rebuilt"] = True
         return report
     finally:
-        if stage.exists():
-            stage.unlink()
+        for suffix in ("", "-wal", "-shm"):
+            candidate = Path(str(stage) + suffix)
+            if candidate.is_file():
+                candidate.unlink()
 
 def _safe_rows(db, sql, args=()):
     return [dict(r) for r in db.execute(sql, args)]
