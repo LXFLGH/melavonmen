@@ -171,3 +171,63 @@ the index. A stale source hash causes context reads to fail closed and directs
 the caller to update. Responses are bounded and obvious secret assignments
 are redacted; **this is defense-in-depth, not a guarantee that every secret in
 source code is detectable**. Never expose a workspace to untrusted MCP clients.
+
+## Automatic update lifecycle and optional Git hook integration
+
+Run a foreground workspace file poller for uncommitted changes:
+
+    python native_cli.py --project /ABS/YOUR-PROJECT watch --interval 2
+
+This uses full inventory hashes, so missed OS events cannot silently leave a
+stale index. Ctrl-C terminates the watcher. To run exactly twice for tests,
+add --iterations 2. It does not edit source files or Doc/Wiki.
+
+The following Git hook *bodies* can be added to a project's existing hook
+workflow. **Do not blindly replace any existing hooks.** Substitute the actual
+absolute native_cli.py path; use the same path for all three. They must be
+executed from the target Git project, not the Skill repository.
+
+Before commit (in .git/hooks/pre-commit or your hook manager):
+
+    #!/bin/sh
+    python3 /ABS/MELAVONMEN/skill/melavonmen/scripts/native_cli.py \
+      --project "$(git rev-parse --show-toplevel)" check
+
+After commit (in .git/hooks/post-commit):
+
+    #!/bin/sh
+    python3 /ABS/MELAVONMEN/skill/melavonmen/scripts/native_cli.py \
+      --project "$(git rev-parse --show-toplevel)" update
+
+For branch switches/merges, the corresponding post-checkout/post-merge hook
+can run that same update command. A pre-commit failure means the index is
+stale; refresh it and review impacted Doc/Wiki before retrying. A Git hook
+cannot certify manual business contracts on its own. For multiple Worktrees,
+Git may share the hooks folder; the computed working-directory root ensures
+each hook updates **only its own index**.
+
+### Schema changes and recovery
+
+    python native_cli.py --project /ABS/YOUR-PROJECT doctor
+    python native_cli.py --project /ABS/YOUR-PROJECT migrate
+
+migrate is a non-destructive rebuild from the actual worktree; it writes a
+staging SQLite database, validates it, creates a consistent backup of the old
+index, checkpoints its WAL and installs the new index by atomic rename. This is
+appropriate because auto-generated symbol facts are not an authoritative Doc
+record. Keep backups until manual verification, especially after a crash.
+
+## Reproducible performance comparison
+
+    python native_cli.py --project /ABS/YOUR-PROJECT benchmark --runs 10 \
+      --phrase "calculate_price" --phrase "load"
+
+The command reports cold build time, incremental unchanged-repo update P50/P95,
+query P50/P95, raw ripgrep or Git grep P50/P95, full-source estimated context
+tokens and returned-result estimated tokens. Both token counts are **only JSON
+character-count or file-byte heuristics divided by 4**, not a precise
+tokenizer; Git grep measures tracked files whereas native indexing includes
+untracked nonignored sources. A raw grep baseline is reproducible but is
+**not** an apples-to-apples proprietary Coding Agent Codebase Index.
+Benchmark on the *same revision, same machine and same workloads*, and do not
+interpret this proxy as proof of replacement quality on proprietary agents.
