@@ -34,3 +34,7 @@ CLI统一输出JSON（`ok,errors,warnings,stats,details`），发现确定错误
 ## 待升级的解析能力
 
 该版本不自带TS/C++/C#全语言AST解析器，不能将源码文件hash当成函数语义审计的替代。具体项目可加基于TypeScript Compiler API、Clang、Roslyn、Tree-sitter的适配器，在通过验收后接入`validate_symbols`；之前将非Python结果标为`unverified`。此限制必须在交付报告中披露。
+
+## Native Codebase Intelligence 新增 CLI
+
+参见 [docs/mcp-setup.md](../docs/mcp-setup.md)。独立入口 scripts/native_cli.py 支持 build/update/check/audit/doctor/rebuild/query/find/references/graph/impact/context/cycles/unresolved/sync-status/export-routes/benchmark/semantic-build/semantic-query。scripts/native_mcp.py 提供 read-only-default stdio/Streamable HTTP MCP 接入。非 Python 编程语言需选装 Tree-sitter 及相应 grammar 才能报告深度解析；无可用 grammar 时只登记文件并对无法认证的语义明确降级。机器生成的结构索引与语义缓存均是可重建事实，无法替代旧的 validate_symbols 中对人工 Wiki 页签名的检查或业务语义验证。

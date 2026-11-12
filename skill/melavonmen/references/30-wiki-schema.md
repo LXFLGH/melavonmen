@@ -51,3 +51,7 @@ wiki/
 - 变更源码后，根据git diff、模块关联和调用者定位受影响页，修改相关合同和索引；不要求重新读取整个Wiki。
 - 同步时只把已实现事实写入Wiki；未来设计留在Doc/contracts和Doc/changes。
 - 动态语言/跨语言符号若无可靠解析器，只标`unverified`并附源码定位；文件哈希正确**不等于行为正确**。
+
+## Native 结构索引与原有 Wiki 的边界
+
+可重建的 .melavonmen/index.sqlite 保存自动提取的文件、符号、引用、调用、资源边与全文 FTS。它不能取代人工作证的 Wiki 页面，亦不得把机器推断、possible 边写成经验证业务事实。原有 wiki/index.json 和模块页继续按上述契约运行。native_cli export-routes 只产生 .melavonmen/wiki-routes.json，用于 Agent 审核后选择性合并；不直接覆盖手写的 Wiki 根索引。使用 native_cli audit 对真实源码集合独立扫描验证文件覆盖率。

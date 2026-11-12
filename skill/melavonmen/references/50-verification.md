@@ -18,3 +18,7 @@
 ## 结束条件
 
 `0 failed` + Doc目标合同与实现一致 + Wiki事实未过期 + 索引完整 + 素材清单与文件一一对应（涉素材时） + 重大阻断归零 + 用户交付可验证 → 可报告完成。若没有工具/依赖/权限，明确剩余工作，不能写“已验证”或“零漂移”。用户只请求设计方案则无需假装执行代码测试。
+
+## Native Index 验收增量
+
+构建/修改后额外运行：native_cli update（或 build）、check、audit、doctor、query、graph/impact、sync-status；跨语言项目应在安装 Tree-sitter 后跑专门 fixture。不同指标分开：first_party_sources/indexed_sources/deep_parsed_sources/verified_symbols/unverified_symbols/stale_sources/missing_sources/orphan_sources。GitHub Actions 的基准可重复执行，不能把解析器 fallback 或无报错等同于功能完全通过。

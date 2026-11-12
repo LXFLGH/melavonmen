@@ -44,3 +44,14 @@ author: LXFLGH
 - 需求/架构改动在Doc里标`proposed`→`approved`；代码落地后标`implemented`；源码/测试/文档核验后才标`verified`。Wiki事实字段永远只描述当前可证实的实现。
 - 工具检查会有局限（当前跨语言语义验证并不完整），应明确报告`warnings/unverified`，不能把哈希匹配冒充语义正确。
 - 素材交付的完成标准是“文件数 == 素材数、每文件只含一个素材、清单与图片头/哈希一致”；交付一张拼版图不算完成。
+
+## Native Codebase Intelligence（可选的本地执行层）
+
+CLI、MCP、解析器和缓存说明见 [Native 安装与 Harness](docs/mcp-setup.md)，实现目标和证据语义见 [Native 合同](docs/native-index-contract.md)。
+
+- 在已运行索引构建的工程中，定位代码先用 native_cli query/find/references/graph/impact，再定向读取 Doc/Wiki 和经 SHA 核验的源码片段；绝不因可用新索引就一次性加载全库。
+- 机器事实单独存在于工作区 .melavonmen/index.sqlite；向量缓存 .melavonmen/semantic.sqlite 可重建。Doc/Wiki 的意图与人工审计事实不自动被缓存覆盖。
+- 首方源码完整性用 native_cli audit 进行独立物理扫描，既比较 Git+未追踪源码，也比较实际 SQLite 清单。此结果独立于旧 wiki/index.json 自报计数。
+- 默认基础检索不需要网络/API Key；非 Python 的深度符号索引需真实 Tree-sitter 解析器，解析器不可用或含语法错误时明确报告 degraded/unverified。Godot 的声明式资源文件可独立被解析。
+- 公共 API、资源或信号更改先运行 impact 和 sync-status，生成最小 Doc/Wiki 复核任务；状态变更须有测试与人工/Agent 审核，不把未来目标覆盖到 Wiki。
+- MCP 默认为只读；刷新索引需 --allow-write。跨 Worktree 不共享可写数据库；父 Agent 合并后统一 update/check。

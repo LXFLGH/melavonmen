@@ -127,6 +127,25 @@ def index(project, errors, warnings, stats):
             deep = sum(isinstance(s, dict) and s.get("coverage") == "deep" for s in inventory)
             if main.get("deep_sources") != deep:
                 errors.append("wiki.deep_sources disagrees with inventory coverage")
+            # Cross-check the declared Wiki inventory against an independently
+            # enumerated first-party source set. The existing len(sources) checks
+            # cannot prove coverage, even if every declared row is valid.
+            try:
+                from native_engine import config as native_config, discover as native_discover
+                from native_parsers import language_for
+                actual_sources, physical = native_discover(project, native_config(project))
+                registered_supported = {p for p in seen if language_for(p)}
+                missing_in_wiki = sorted(actual_sources - registered_supported)
+                extra_in_wiki = sorted(registered_supported - actual_sources)
+                errors.extend(f"wiki source not registered in independent scan: {p}"
+                              for p in extra_in_wiki)
+                errors.extend(f"first-party source missing from wiki inventory: {p}"
+                              for p in missing_in_wiki)
+                stats["wiki_independent_first_party_sources"] = len(physical)
+                stats["wiki_independent_missing_sources"] = len(missing_in_wiki)
+                stats["wiki_independent_orphan_sources"] = len(extra_in_wiki)
+            except (OSError, ValueError, ImportError) as exc:
+                warnings.append("independent source audit unavailable: " + str(exc))
             stats["wiki_total_sources"] = len(inventory)
             stats["wiki_deep_sources"] = deep
         for i, route in enumerate(entries(main.get("task_routes"))):
@@ -221,6 +240,7 @@ def symbols(project, errors, warnings, stats):
     if not isinstance(data, dict):
         return
     validated = 0
+    verified_non_python = 0
     unverified = 0
     cache = {}
     inventory_paths = {s.get("path") for s in entries(data.get("sources")) if isinstance(s, dict) and isinstance(s.get("path"), str)}
@@ -258,9 +278,47 @@ def symbols(project, errors, warnings, stats):
                 continue
             decls = entries(item.get("declarations"))
             if src.suffix != ".py":
-                unverified += len(decls)
-                if decls:
-                    warnings.append(f"{item.get('source_path')}: non-Python symbols require external language parser; signatures not certified")
+                try:
+                    from native_parsers import parse_file, language_for
+                    language = language_for(item["source_path"])
+                    if not language:
+                        raise ImportError("no supported parser")
+                    extracted = parse_file(src, item["source_path"], language,
+                                           hashlib.sha256(src.read_bytes()).hexdigest(),
+                                           str(item.get("revision") or "unknown"))
+                except (ImportError, OSError, UnicodeError, ValueError) as exc:
+                    extracted = {"depth": "indexed", "symbols": [], "warnings": [str(exc)]}
+                verified_actual = {
+                    d["qualified_name"]: d for d in extracted["symbols"]
+                    if d.get("verification_status") == "verified"}
+                if extracted["depth"] != "deep":
+                    unverified += len(decls)
+                    if decls:
+                        warnings.append(
+                            f"{item.get('source_path')}: no reliable deep parser; "
+                            + ", ".join(extracted["warnings"])[:200])
+                    continue
+                for declared in decls:
+                    if not isinstance(declared, dict):
+                        errors.append(f"malformed declaration in {path}")
+                        continue
+                    key = declared.get("qualified_name")
+                    real = verified_actual.get(key)
+                    if real is None:
+                        unverified += 1
+                        warnings.append(f"{item.get('source_path')}:{key}: "
+                                        "symbol not statically certified")
+                    elif declared.get("signature") != real["signature"]:
+                        errors.append(f"signature mismatch: {key}: "
+                                      f"documented={declared.get('signature')!r} "
+                                      f"actual={real['signature']!r}")
+                    elif (declared.get("line_start") is not None and
+                          declared["line_start"] != real["line_start"]):
+                        errors.append(f"line drift: {key}: "
+                                      f"documented={declared['line_start']} "
+                                      f"actual={real['line_start']}")
+                    else:
+                        verified_non_python += 1
                 continue
             if src not in cache:
                 try:
@@ -285,6 +343,7 @@ def symbols(project, errors, warnings, stats):
                 else:
                     validated += 1
     stats["verified_python_signatures"] = validated
+    stats["verified_non_python_signatures"] = verified_non_python
     stats["unverified_non_python_signatures"] = unverified
 
 

@@ -14,3 +14,7 @@
 `task_id, state, source_revision, proposed_contracts, approved_contracts, changed_sources, changed_doc, changed_wiki, index_paths, tests, unresolved, unverified, next_actions`。
 
 仅交接引用和最小上下文，必要时新Agent再读目标模块Doc/Wiki，避免复制几万token的聊天历史。审计结果的`unverified`不可变为`verified`只因Agent交接完成。
+
+## Native 并发索引
+
+每个 Worktree/工作区在 .melavonmen/ 下维护自己的 SQLite（WAL + busy_timeout + IMMEDIATE 事务），即使共享同一 Git 仓库也不能将其他分支缓存覆盖到当前工作树。子 Agent 只维护自己 Worktree 的可重建缓存、代码、合同和审计证据；父 Agent 统一合并源码/Doc/Wiki 后在合并工作区执行 update→audit→sync-status。数据库异常运行 doctor；rebuild 构建临时新数据库并保留旧数据库备份，禁止无证据强行删除用户已有数据。
