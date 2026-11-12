@@ -34,6 +34,12 @@ jobs:
           python skill/melavonmen/scripts/native_cli.py --project . doctor > /tmp/native-doctor.json
           python skill/melavonmen/scripts/native_cli.py --project . query native --limit 5 > /tmp/native-query.json
           python skill/melavonmen/scripts/native_cli.py --project . benchmark --runs 3 --phrase native > /tmp/native-benchmark.json
+          echo "::group::Independent source coverage"
+          cat /tmp/native-build.json
+          echo "::endgroup::"
+          echo "::group::Comparative cold/warm/query benchmark"
+          cat /tmp/native-benchmark.json
+          echo "::endgroup::"
       - name: Upload reproducible reports
         if: always()
         uses: actions/upload-artifact@v4
