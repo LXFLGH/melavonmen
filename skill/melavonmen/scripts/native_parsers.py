@@ -16,7 +16,7 @@ PARSER_VERSION = "native-2"
 LANGUAGES = {
     ".py": "python", ".gd": "gdscript", ".js": "javascript", ".jsx": "javascript",
     ".mjs": "javascript", ".cjs": "javascript", ".ts": "typescript",
-    ".tsx": "tsx", ".cs": "c_sharp", ".c": "c", ".h": "cpp",
+    ".tsx": "tsx", ".cs": "csharp", ".c": "c", ".h": "cpp",
     ".cc": "cpp", ".cpp": "cpp", ".cxx": "cpp", ".hpp": "cpp",
     ".hh": "cpp", ".json": "json", ".yaml": "yaml", ".yml": "yaml",
     ".toml": "toml", ".tscn": "godot_resource", ".tres": "godot_resource",
@@ -130,7 +130,7 @@ def _parser_for(language):
         from tree_sitter_language_pack import get_language
         from tree_sitter import Parser
         return Parser(get_language(language))
-    except (ImportError, ValueError, RuntimeError, TypeError, OSError) as exc:
+    except Exception as exc:
         return str(exc)
 
 def parse_tree_sitter(text, path, sha, revision, language, out):
@@ -314,7 +314,7 @@ def parse_file(path, source_path, language, sha, revision):
         elif language in {"json", "yaml", "toml"}:
             parse_config(text, source_path, sha, revision, language, out)
         elif language in {"gdscript", "javascript", "typescript", "tsx",
-                          "c_sharp", "c", "cpp"}:
+                          "csharp", "c", "cpp"}:
             parse_tree_sitter(text, source_path, sha, revision, language, out)
         if language in {"gdscript", "godot_resource", "godot_project"}:
             parse_godot(text, source_path, sha, revision, language, out)
