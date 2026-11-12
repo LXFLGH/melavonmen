@@ -2,7 +2,7 @@
   "schema_version": "melavonmen.wiki/1",
   "project": "<project-id>",
   "source_revision": null,
-  "loc_scope": {"include": "tracked first-party physical source lines including tests", "exclude": ["vendor", "generated", "build", "assets", "locks"]},
+  "loc_scope": {"include": "tracked first-party physical source lines including tests", "exclude": ["vendor", "generated", "build", "assets", "locks"], "include_globs": [], "exclude_globs": []},
   "loc_total": null,
   "total_sources": 1,
   "indexed_sources": 1,

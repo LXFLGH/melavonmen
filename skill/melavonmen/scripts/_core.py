@@ -6,7 +6,8 @@ import argparse
 import ast
 import hashlib
 import json
-from pathlib import Path
+import os
+from pathlib import Path, PurePosixPath
 import struct
 import subprocess
 import sys
@@ -16,6 +17,16 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 ASSET_MANIFESTS = ("assets/manifest.json", "assets/index.json", "doc/assets.json")
 ATLAS_WORDS = ("sheet", "atlas", "tileset", "spritesheet", "contact")
 SOF_CODES = (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF)
+SOURCE_SUFFIXES = frozenset("""
+    .apex .bash .c .cc .cls .cpp .cs .cxx .gd .go .h .hh .hpp .hxx .java
+    .js .jsx .cjs .mjs .ts .tsx .cts .mts .kt .kts .lua .m .metal .php .py
+    .rb .rs .sh .swift .trigger .zig
+""".split())
+SOURCE_EXCLUDED_DIRS = frozenset({
+    ".git", ".codebase-index", ".opencode", ".claude", ".venv", "__pycache__",
+    "vendor", "node_modules", "build", "dist", "generated",
+})
+SOURCE_EXCLUDED_ROOTS = frozenset({"doc", "wiki", "assets"})
 
 
 def emit(mode, errors, warnings, stats, details=None):
@@ -69,6 +80,91 @@ def manifest_paths(doc):
     return results
 
 
+def source_directory_excluded(parts):
+    return bool(parts and (parts[0] in SOURCE_EXCLUDED_ROOTS or SOURCE_EXCLUDED_DIRS.intersection(parts)))
+
+
+def source_candidate(project, relative, scope):
+    path = PurePosixPath(relative)
+    if source_directory_excluded(path.parts[:-1]):
+        return False
+    if any(path.match(pattern) for pattern in scope.get("exclude_globs", [])):
+        return False
+    includes = scope.get("include_globs", [])
+    if path.suffix.lower() not in SOURCE_SUFFIXES and not any(path.match(pattern) for pattern in includes):
+        return False
+    local = project / relative
+    return not local.is_symlink() and local.is_file() and local.resolve().is_relative_to(project)
+
+
+def source_scope(inventory, errors):
+    scope = inventory.get("loc_scope", {})
+    if not isinstance(scope, dict):
+        errors.append("wiki.loc_scope must be an object")
+        return {}
+    result = {}
+    for key in ("include_globs", "exclude_globs"):
+        patterns = scope.get(key, [])
+        if not isinstance(patterns, list) or any(not isinstance(p, str) or not p.strip() for p in patterns):
+            errors.append(f"wiki.loc_scope.{key} must contain non-empty glob strings")
+        else:
+            result[key] = patterns
+    return result
+
+
+def git_paths(project, *arguments):
+    result = subprocess.run(["git", "-C", str(project), *arguments],
+                            capture_output=True, check=True)
+    return {os.fsdecode(path) for path in result.stdout.split(b"\0") if path}
+
+
+def discover_sources(project, scope, errors):
+    try:
+        git_root = subprocess.run(["git", "-C", str(project), "rev-parse", "--is-inside-work-tree"],
+                                  capture_output=True, check=False)
+        if git_root.returncode == 0 and git_root.stdout.strip() == b"true":
+            candidates = git_paths(project, "ls-files", "-z", "--cached", "--")
+            return {p for p in candidates if source_candidate(project, p, scope)}
+    except FileNotFoundError:
+        pass
+    except (OSError, subprocess.CalledProcessError) as exc:
+        errors.append(f"cannot enumerate tracked sources: {exc}")
+        return set()
+
+    sources = set()
+    for root, directories, files in os.walk(project):
+        relative = Path(root).relative_to(project)
+        directories[:] = [d for d in directories if not source_directory_excluded((*relative.parts, d))]
+        for filename in files:
+            candidate = (relative / filename).as_posix()
+            if source_candidate(project, candidate, scope):
+                sources.add(candidate)
+    return sources
+
+
+def validate_symbol_routes(root, routes, registered_pages, errors):
+    if not isinstance(routes, list):
+        errors.append("wiki.symbol_routes must be a list")
+        return
+    pages = {}
+    for i, route in enumerate(routes):
+        label = f"wiki.symbol_routes[{i}]"
+        if not isinstance(route, dict) or not isinstance(route.get("qualified_name"), str) or not isinstance(route.get("page"), str):
+            errors.append(f"{label} requires qualified_name and page")
+            continue
+        name = route["qualified_name"]
+        relative, _, anchor = route["page"].partition("#")
+        if not name or (anchor and anchor != name) or relative not in registered_pages:
+            errors.append(f"{label}: invalid symbol or unregistered page: {route['page']}")
+            continue
+        if relative not in pages:
+            data = load(root / relative, errors)
+            declarations = entries(data.get("declarations")) if isinstance(data, dict) else []
+            pages[relative] = [d.get("qualified_name") for d in declarations if isinstance(d, dict)]
+        if name not in pages[relative]:
+            errors.append(f"{label}: symbol {name} missing from {relative}")
+
+
 def index(project, errors, warnings, stats):
     present = False
     for kind in ("doc", "wiki"):
@@ -84,7 +180,8 @@ def index(project, errors, warnings, stats):
                 resolve(root, path, errors, f"doc.manifest.{label}")
         else:
             modules = {}
-            source_paths = set()
+            source_pages = set()
+            registered_pages = set()
             for i, module in enumerate(entries(main.get("modules"))):
                 mid = module.get("id") if isinstance(module, dict) else None
                 p = resolve(root, module.get("index") if isinstance(module, dict) else None,
@@ -99,9 +196,10 @@ def index(project, errors, warnings, stats):
                             if not isinstance(page, dict):
                                 errors.append(f"wiki {mid}.pages[{j}] not an object")
                                 continue
-                            resolve(root, page.get("page"), errors, f"wiki {mid}.pages[{j}]")
+                            if resolve(root, page.get("page"), errors, f"wiki {mid}.pages[{j}]"):
+                                registered_pages.add(page["page"])
                             if isinstance(page.get("source_path"), str):
-                                source_paths.add(page["source_path"])
+                                source_pages.add((mid, page["source_path"]))
             inventory = entries(main.get("sources"))
             seen = set()
             for i, item in enumerate(inventory):
@@ -118,8 +216,12 @@ def index(project, errors, warnings, stats):
                 resolve(project, src, errors, f"wiki.sources[{i}]")
                 if item.get("module_id") not in modules:
                     errors.append(f"wiki.sources[{i}] refers to unknown module: {item.get('module_id')}")
-                if item.get("coverage") == "deep" and src not in source_paths:
+                if item.get("coverage") == "deep" and (item.get("module_id"), src) not in source_pages:
                     errors.append(f"deep source lacks a module page: {src}")
+            scope = source_scope(main, errors)
+            discovered = discover_sources(project, scope, errors)
+            errors.extend(f"source missing from wiki inventory: {src}" for src in sorted(discovered - seen))
+            validate_symbol_routes(root, main.get("symbol_routes", []), registered_pages, errors)
             if main.get("total_sources") != len(inventory):
                 errors.append("wiki.total_sources disagrees with inventory length")
             if main.get("indexed_sources") != len(seen):
@@ -129,6 +231,7 @@ def index(project, errors, warnings, stats):
                 errors.append("wiki.deep_sources disagrees with inventory coverage")
             stats["wiki_total_sources"] = len(inventory)
             stats["wiki_deep_sources"] = deep
+            stats["wiki_discovered_sources"] = len(discovered)
         for i, route in enumerate(entries(main.get("task_routes"))):
             if not isinstance(route, dict):
                 errors.append(f"{kind}.task_routes[{i}] not an object")
@@ -223,7 +326,8 @@ def symbols(project, errors, warnings, stats):
     validated = 0
     unverified = 0
     cache = {}
-    inventory_paths = {s.get("path") for s in entries(data.get("sources")) if isinstance(s, dict) and isinstance(s.get("path"), str)}
+    inventory = {s["path"]: s for s in entries(data.get("sources")) if isinstance(s, dict) and isinstance(s.get("path"), str)}
+    digests = {}
     for s in entries(data.get("sources")):
         if not isinstance(s, dict):
             continue
@@ -231,6 +335,7 @@ def symbols(project, errors, warnings, stats):
         if not path:
             continue
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        digests[s["path"]] = digest
         if s.get("sha256") != digest:
             errors.append(f"stale source sha256: {s.get('path')}")
     for m in entries(data.get("modules")):
@@ -251,9 +356,15 @@ def symbols(project, errors, warnings, stats):
             item = load(path, errors)
             if not isinstance(item, dict):
                 continue
-            if item.get("source_path") not in inventory_paths:
-                errors.append(f"wiki page not in source inventory: {item.get('source_path')}")
-            src = resolve(project, item.get("source_path"), errors, "wiki page source")
+            source_name = item.get("source_path")
+            if not isinstance(source_name, str) or source_name not in inventory:
+                errors.append(f"wiki page not in source inventory: {source_name}")
+                continue
+            if source_name != page.get("source_path"):
+                errors.append(f"wiki page source disagrees with module route: {page.get('page')}")
+            if "source_sha256" in item and item["source_sha256"] != digests.get(source_name):
+                errors.append(f"stale wiki page source_sha256: {page.get('page')}")
+            src = resolve(project, source_name, errors, "wiki page source")
             if not src:
                 continue
             decls = entries(item.get("declarations"))
@@ -269,6 +380,8 @@ def symbols(project, errors, warnings, stats):
                     errors.append(f"Python AST parse failed {src}: {exc}")
                     continue
             actual = cache[src]
+            if actual and not decls and inventory[source_name].get("coverage") == "deep":
+                errors.append(f"deep Python page has no declarations: {source_name}")
             for d in decls:
                 if not isinstance(d, dict):
                     errors.append(f"malformed declaration in {path}")
@@ -290,12 +403,13 @@ def symbols(project, errors, warnings, stats):
 
 def git_changed(project, base, errors):
     try:
-        result = subprocess.run(["git", "-C", str(project), "diff", "--name-only", "--diff-filter=ACMRTD", base, "--"],
-                                capture_output=True, text=True, check=True)
-        tracked = {x for x in result.stdout.splitlines() if x}
-        result = subprocess.run(["git", "-C", str(project), "ls-files", "--others", "--exclude-standard"],
-                                capture_output=True, text=True, check=True)
-        return tracked | set(result.stdout.splitlines())
+        revision = subprocess.run(
+            ["git", "-C", str(project), "rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}"],
+            capture_output=True, check=True, text=True,
+        ).stdout.strip()
+        tracked = git_paths(project, "diff", "--name-only", "-z", "--no-renames", revision, "--")
+        untracked = git_paths(project, "ls-files", "-z", "--others", "--exclude-standard", "--")
+        return tracked | untracked
     except (OSError, subprocess.CalledProcessError) as exc:
         errors.append(f"git diff failed: {exc}")
         return set()
@@ -314,20 +428,22 @@ def drift(project, base, errors, warnings, stats, details):
         else:
             code.add(f)
     inventory = {}
+    scope = {}
     root = project / "wiki" / "index.json"
     if root.is_file():
         data = load(root, errors)
         if isinstance(data, dict):
             inventory = {x.get("path"): x for x in entries(data.get("sources")) if isinstance(x, dict) and isinstance(x.get("path"), str)}
+            scope = source_scope(data, errors)
     changed_indexed = sorted(set(code) & set(inventory))
-    code_ext = {".py", ".js", ".jsx", ".ts", ".tsx", ".c", ".cc", ".cpp", ".h", ".hpp", ".cs", ".go", ".rs", ".java", ".gd", ".lua", ".swift", ".kt"}
-    unindexed_source = sorted(f for f in code if f not in inventory and Path(f).suffix.lower() in code_ext and not f.startswith(("vendor/", "node_modules/", "dist/", "build/")))
+    unindexed_source = sorted(f for f in code - inventory.keys() if source_candidate(project, f, scope))
     if unindexed_source and root.is_file():
         errors.extend(f"source missing from wiki inventory: {f}" for f in unindexed_source)
     stale = []
     for src in changed_indexed:
         p = project / src
-        if not p.is_file() or hashlib.sha256(p.read_bytes()).hexdigest() != inventory[src].get("sha256"):
+        if (not p.is_file() or not p.resolve().is_relative_to(project)
+                or hashlib.sha256(p.read_bytes()).hexdigest() != inventory[src].get("sha256")):
             stale.append(src)
     if stale:
         errors.extend(f"stale wiki source hash: {s}" for s in stale)

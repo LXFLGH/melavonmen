@@ -1,6 +1,6 @@
 # 内置可执行检查器与范围说明
 
-本Skill携带五个CLI入口（Python 3.10+，仅标准库）：
+本 Skill 携带五个校验 CLI（Python 3.10+，仅标准库）。用于源码查找和调用图的 MCP 与终端入口见[代码检索](35-code-search.md)。
 
 ```bash
 python scripts/validate_index.py --project /path/to/project
@@ -15,7 +15,7 @@ python -m unittest discover -s scripts/tests -v
 
 | 命令 | 真正可验证的事项 | 目前不能证明的事项 |
 |---|---|---|
-| `validate_index` | 根任务路由/清单文件存在、路径不越界、模块/深度页、源文件覆盖统计一致 | Wiki语义真实性 |
+| `validate_index` | 根任务路由、符号锚点、模块/深度页、路径边界、覆盖统计，以及源码清单漏项 | Wiki语义真实性 |
 | `validate_schema` | 索引必要字段、合同状态、SHA格式与manifest ID合法性 | 所有自定义JSON Schema的完全正确性 |
 | `validate_symbols` | Wiki清单源码SHA-256匹配；Python AST解析的函数/类签名及定位行号 | JS/TS/C++/C#等语言的函数签名及任何业务行为；会明确产生warning/unverified数 |
 | `validate_assets` | 素材清单可解析、普通素材`sprites==1`、精灵表`sprites`==atlas帧数且帧矩形不越界/帧名唯一/`source_files`存在、路径不越界且文件存在、声明尺寸与实际图片头（PNG/JPEG/GIF/BMP/WebP）一致、sha256匹配、未登记图片与命名可疑项 | **一张图里是否真塞了多个不相关素材**（像素级内容无法静态判定，只能靠清单/命名+人工目视抽检）；pivot 是否落在角色脚底、帧与帧是否对齐等视觉质量 |

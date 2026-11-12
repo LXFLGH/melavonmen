@@ -1,0 +1,12 @@
+{
+  "name": "melavonmen-local",
+  "interface": { "displayName": "Melavonmen" },
+  "plugins": [
+    {
+      "name": "melavonmen",
+      "source": { "source": "local", "path": "./build/melavonmen" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

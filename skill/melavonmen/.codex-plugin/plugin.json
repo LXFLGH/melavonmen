@@ -1,0 +1,16 @@
+{
+  "name": "melavonmen",
+  "version": "3.0.0",
+  "description": "Code search, call graphs and change impact integrated with Doc/Wiki workflows.",
+  "author": { "name": "LXFLGH" },
+  "repository": "https://github.com/LXFLGH/melavonmen",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Melavonmen",
+    "shortDescription": "代码检索与 Doc/Wiki 同步",
+    "longDescription": "在本地检索源码、定位定义、追踪调用关系和分析改动影响，并将经源码核验的事实同步到项目 Wiki。",
+    "developerName": "LXFLGH",
+    "category": "Productivity"
+  }
+}

@@ -64,6 +64,12 @@ class Validators(unittest.TestCase):
                            capture_output=True, text=True)
         return p.returncode, json.loads(p.stdout)
 
+    def commit_baseline(self):
+        subprocess.run(["git", "init", "-q", str(self.p)], check=True)
+        subprocess.run(["git", "-C", str(self.p), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(self.p), "-c", "user.name=test", "-c", "user.email=test@example.test",
+                        "commit", "-qm", "baseline"], check=True)
+
     def write_assets(self, entries, files):
         root = self.p / "assets"
         for rel, data in files.items():
@@ -232,24 +238,55 @@ class Validators(unittest.TestCase):
         self.assertTrue(any("invalid status" in e for e in report["errors"]))
 
     def test_unindexed_source_reported(self):
-        subprocess.run(["git", "init", "-q", str(self.p)], check=True)
-        subprocess.run(["git", "-C", str(self.p), "add", "."], check=True)
-        subprocess.run(["git", "-C", str(self.p), "-c", "user.name=test", "-c", "user.email=test@example.test",
-                        "commit", "-qm", "baseline"], check=True)
+        self.commit_baseline()
         (self.p / "src" / "new.py").write_text("print(123)\n")
         code, report = self.run_cli("detect_doc_drift.py")
         self.assertEqual(code, 1)
         self.assertTrue(any("source missing" in e for e in report["errors"]))
 
     def test_drift_reports_changed_source(self):
-        subprocess.run(["git", "init", "-q", str(self.p)], check=True)
-        subprocess.run(["git", "-C", str(self.p), "add", "."], check=True)
-        subprocess.run(["git", "-C", str(self.p), "-c", "user.name=test", "-c", "user.email=test@example.test",
-                        "commit", "-qm", "baseline"], check=True)
+        self.commit_baseline()
         self.source.write_text(self.source.read_text() + "# changed\n")
         code, report = self.run_cli("detect_doc_drift.py")
         self.assertEqual(code, 1)
         self.assertIn("src/math.py", report["details"]["stale_wiki_sources"])
+
+    def test_index_detects_preexisting_source_omission(self):
+        (self.p / "src" / "遗漏.py").write_text("pass\n", encoding="utf-8")
+        self.commit_baseline()
+        code, report = self.run_cli("validate_index.py")
+        self.assertEqual(code, 1, report)
+        self.assertIn("source missing from wiki inventory: src/遗漏.py", report["errors"])
+
+    def test_symbol_route_requires_a_declared_anchor(self):
+        path = self.p / "wiki" / "index.json"
+        data = json.loads(path.read_text())
+        data["symbol_routes"] = [{"qualified_name": "sum_two", "page": "math/math.json#sum_two"}]
+        save(path, data)
+        self.assertEqual(self.run_cli("validate_index.py")[0], 0)
+        data["symbol_routes"] = [{"qualified_name": "ghost", "page": "math/math.json#ghost"}]
+        save(path, data)
+        code, report = self.run_cli("validate_index.py")
+        self.assertEqual(code, 1, report)
+        self.assertIn("wiki.symbol_routes[0]: symbol ghost missing from math/math.json", report["errors"])
+
+    def test_page_hash_and_missing_declarations_are_reported(self):
+        path = self.p / "wiki" / "math" / "math.json"
+        page = json.loads(path.read_text())
+        page.update(source_sha256="0" * 64, declarations=[])
+        save(path, page)
+        code, report = self.run_cli("validate_symbols.py")
+        self.assertEqual(code, 1, report)
+        self.assertIn("stale wiki page source_sha256: math/math.json", report["errors"])
+        self.assertIn("deep Python page has no declarations: src/math.py", report["errors"])
+
+    def test_drift_keeps_both_endpoints_of_a_unicode_rename(self):
+        self.commit_baseline()
+        subprocess.run(["git", "-C", str(self.p), "mv", "src/math.py", "src/新名字.py"], check=True)
+        code, report = self.run_cli("detect_doc_drift.py")
+        self.assertEqual(code, 1, report)
+        self.assertEqual(report["details"]["stale_wiki_sources"], ["src/math.py"])
+        self.assertEqual(report["details"]["unindexed_source"], ["src/新名字.py"])
 
 
 if __name__ == "__main__":

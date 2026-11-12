@@ -41,6 +41,10 @@ wiki/
 - 用户任务所触及的源码及影响接口必须优先深度检查并同步。可先有100%的文件路由，而不宣称有100%的符号/调用图覆盖；
 - `total_sources == len(sources)`，`indexed_sources`应等于唯一、可访问路径数，`deep_sources`应等于覆盖状态为deep的文件数。
 
+`validate_index` 用 Git 已跟踪文件独立核对文件覆盖率。普通目录按文件系统枚举。默认纳入已识别的源码后缀及自有测试，排除生成物、依赖、资产及 Doc/Wiki 目录。可在 `loc_scope.include_globs` 添加后缀或文件名，在 `loc_scope.exclude_globs` 排除具体路径。新增深度页请写入 `source_sha256`；校验器会核对该字段（若存在）和模块页记录的源码路径。
+
+可选 `symbol_routes` 采用 `{qualified_name, page}`，其中 `page` 是已在模块中登记的 JSON 页路径，也可写为 `path#qualified_name`。同名符号可按页保留多条路由。
+
 子索引`pages:[{source_path,page}]`，深度页推荐字段：`source_path,language,source_sha256,revision,purpose,declarations[],data_structures[],imports[],calls[],called_by[],inheritance[],side_effects[],error_paths[],tests[],hazards[],evidence[]`。
 声明尽量记录：`qualified_name,kind,signature,parameters:[{name,type,default}],return_type,line_start,source_revision`；静态类型无法确定时标`unknown`，不得凭感觉补完。hpp+cpp可以合并单页并列出全部源路径，注意验证器基础版本按一个`source_path`逐页解析；复杂成对关系可通过`related_sources[]`扩展。
 

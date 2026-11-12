@@ -1,47 +1,40 @@
-# melavonmen v2.3.1 · release bundle
+# Melavonmen
 
-此目录是安装到私有仓库 `agent-memory/skill/melavonmen/` 的**增量覆盖包**，包含精简 SKILL.md、按需加载参考规则、机器模板和实际可运行的标准库 Python 校验器。
+Melavonmen 将本地源码检索、定义定位、调用图和改动影响分析接入 Doc/Wiki 工作流。Codex 插件使用锁定的 `open-codebase-index@0.38.2` 后端，保留该版本的 23 个 MCP 工具和 5 个 prompts。
 
-## 本版变更（v2.3.1）
+## 安装到 Codex
 
-- **精灵表（sprite sheet）明确为唯一常规例外**，并给出可校验契约：`kind:"sprite_sheet"` + `sprites:帧数` + `atlas:<json>`（帧名/x/y/w/h[/pivot]）+ `source_files:[逐帧图]`。四条缺一即不合格；其余打包（多主题图标集、UI 图集）仍需用户批准。
-- `validate_assets` 支持精灵表：帧数须等于 `sprites`、帧矩形不得越界、帧名唯一、`source_files` 必须存在；普通素材仍强制 `sprites == 1`。
-- 规则文本去掉了自相矛盾的“禁止精灵表 vs 精灵图除外”，改为单一表述；`00-routing`、`50-verification`、`60-safety-memory`、`90-tooling` 同步。
-
-## v2.3.0
-
-- **Wiki 解耦与可读性优先级成文。** 新增：一页一源文件、事实唯一副本（跨页只引用 `page#symbol`）、索引不承载细节、拆分阈值（>6KiB / >40 declarations / 需同时改 ≥3 页即拆）；可读性排序明确为 **1 AI 可读 → 2 机器可解析 → 3 人类可读**，人类排版美观排最后。见 `references/30-wiki-schema.md`。
-- SKILL.md 规则 5 从“最小上下文”升级为“最小上下文 + 解耦”，写入上述两条优先级；建 Wiki 的入口话术同步。
-
-## v2.2.0
-
-- **新增硬规则：素材图必须解耦。** 用户要求生成素材图时，每个贴图/图标/立绘/瓦片/序列帧必须单独一个文件；**禁止多个素材保存在同一个文件中**（图集、精灵表、动画条、多宫格拼版、contact sheet 一律不接受）。细则见 `references/65-asset-delivery.md`。
-- 新增 `scripts/validate_assets.py`：核验素材清单 `sprites == 1`、路径、文件存在性、声明尺寸与图片头（PNG/JPEG/GIF/BMP/WebP）一致、sha256 一致，并把未登记图片报为 warning；已批准图集需 `user_approved: true` 且保留分立原图。
-- 路由、安全红线、验证门禁、提示词模板、工具说明同步更新；测试从 8 例增至 14 例。
-
-## 安装到已有仓库
-
-在本地克隆并进入 `agent-memory` 后，把本包目录内的文件覆盖复制到仓库的 `skill/melavonmen/`，保留其他仓库文件：
+解压发布包后进入 `melavonmen-3.0.0/`。从本仓库安装时进入 `skill/melavonmen/`。在该目录运行以下命令，然后打开一个新的 Codex 聊天。
 
 ```bash
-cp -R /path/to/melavonmen-v2.2/. skill/melavonmen/
-python -m unittest discover -s skill/melavonmen/scripts/tests -v
-git add skill/melavonmen
-git diff --cached --stat
-git commit -m "feat(melavonmen): v2.2 one-asset-per-file delivery contract and asset validator"
-git push origin main
+python3 runtime/package_plugin.py
+codex plugin marketplace add "$(pwd)"
+codex plugin add melavonmen@melavonmen-local
 ```
 
-如果用 PowerShell，可用 `Copy-Item -Recurse -Force` 替代 `cp -R`。提交前检查 `git diff --cached`。
+需要 Python 3.10+、Node.js 22.13+，首次启动还需要 npm 或 Corepack 以及 npm registry 访问。Linux Codex Desktop 可使用随应用安装的 Node.js，也可通过 `MELAVONMEN_NODE` 指定 Node.js 可执行文件。首次启动按锁文件安装后端到 `$XDG_CACHE_HOME/melavonmen` 或 `~/.cache/melavonmen`。可以提前运行 `python3 runtime/launch.py --cli --help` 准备缓存。后续启动复用缓存。保留同名服务 `codebase-index` 的单个活动来源，以免旧插件和 Melavonmen 重复注册。
 
-## 使用检查器
+## 使用
+
+在 Codex 中用 `$melavonmen:melavonmen` 或直接要求“找出源码中负责增量刷新的逻辑”“列出这个函数的调用者”。默认以当前聊天的工作区为检索范围。插件依赖本地市场构建目录，移动项目后请从新路径重新构建和注册。终端可以使用同一后端，在命令中把 `.` 换成目标仓库。
 
 ```bash
-python skill/melavonmen/scripts/validate_index.py --project /path/to/game-project
-python skill/melavonmen/scripts/validate_schema.py --project /path/to/game-project
-python skill/melavonmen/scripts/validate_symbols.py --project /path/to/game-project
-python skill/melavonmen/scripts/validate_assets.py --project /path/to/game-project
-python skill/melavonmen/scripts/detect_doc_drift.py --project /path/to/game-project --base HEAD
+python3 runtime/launch.py --cli status --project .
+python3 runtime/launch.py --cli index --project .
+python3 runtime/launch.py --cli search '索引刷新' --project .
+python3 runtime/launch.py --cli definition discover_sources --project .
+python3 runtime/launch.py --cli graph callers discover_sources --project .
 ```
 
-仅支持Python AST形式的函数签名静态核对。其他语言仅进行源码SHA层面的过期检测，不能假称其语义通过验证。素材检查能证明“清单与文件一致、每项声明只含一个素材”，**不能**从像素内容证明一张图里没塞多个素材 —— 交付前仍需按类别目视抽检。使用wiki需根据模板先建立真实来源索引和SHA；模板里的占位字段须替换。
+本项目的 `.codebase-index/config.json` 使用 `indexing.mode: structural`，无需嵌入模型即可使用关键词、定义和调用图。在其他仓库中可沿用原有 Codebase Index 配置；需要无模型模式时，把该设置合并到目标仓库的配置。需要语义检索和相似实现时，设为 `hybrid`，选择 Ollama、OpenAI、Google 或兼容端点，重新启动会话并为该模式建索引。使用外部嵌入或重排服务会按所选服务配置处理源码片段。GitHub 历史仍按仓库显式启用，并使用既有 `gh` 登录。
+
+检索模式、嵌入模型和忽略规则见[上游配置](https://github.com/Helweg/open-codebase-index/blob/v0.38.2/docs/configuration.md)，工具及响应见[上游工具清单](https://github.com/Helweg/open-codebase-index/blob/v0.38.2/docs/tools.md)。Doc/Wiki 校验命令见 [校验器说明](references/90-tooling.md)。
+
+## 验证
+
+安装插件后可用下列命令复跑校验器和 Codex 端到端测试。混合检索测试在本机启动模拟嵌入端点。
+
+```bash
+python3 -m unittest discover -s scripts/tests -v
+python3 runtime/test_codex.py -v
+```
