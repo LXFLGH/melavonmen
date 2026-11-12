@@ -233,14 +233,43 @@ def _insert(db, root, relative, revision, maximum):
                        (relative, i, line[:2048]))
     return digest, data
 
-def _resolve_edges(db, current_files):
-    """Only bind unique candidates; never promote a possible call to verified."""
+def _godot_uids(root, known):
+    """UID map is derived from sidecars and resource headers, not guessed names."""
+    uid_map = {}
+    for rel in known:
+        try:
+            file = inside(root, rel)
+            sidecar = inside(root, rel + ".uid")
+        except ValueError:
+            continue
+        if sidecar.is_file():
+            try:
+                key = sidecar.read_text(encoding="utf-8")[:256].strip()
+                if key.startswith("uid://"):
+                    uid_map.setdefault(key, set()).add(rel)
+            except (OSError, UnicodeError):
+                pass
+        if Path(rel).suffix in {".tscn", ".tres"} and file.is_file():
+            try:
+                head = file.open("rb")
+                with head:
+                    first = head.read(2048).decode("utf-8", "replace")
+                match = re.search(r'\[(?:gd_scene|gd_resource)[^\]]*uid="(uid://[^"]+)"', first)
+                if match:
+                    uid_map.setdefault(match.group(1), set()).add(rel)
+            except OSError:
+                pass
+    return {uid: next(iter(files)) for uid, files in uid_map.items() if len(files) == 1}
+
+def _resolve_edges(db, current_files, root):
+    """Bind unique candidates conservatively; never promote confidence."""
     known = set(current_files)
+    uids = _godot_uids(root, known)
     symbol_map = {}
     for row in db.execute("SELECT path,name,qualified_name FROM symbols"):
         for key in (row["name"], row["qualified_name"]):
             symbol_map.setdefault(key, set()).add(row["path"])
-    for edge in db.execute("SELECT id,path,kind,target_name,target_file,verification_status FROM edges"):
+    for edge in db.execute("SELECT id,path,kind,target_name,target_file,verification_status,extra FROM edges"):
         target = edge["target_name"]
         file = edge["target_file"]
         if file and file not in known:
@@ -249,7 +278,17 @@ def _resolve_edges(db, current_files):
             candidate = target[6:]
             if candidate in known:
                 file = candidate
-        if not file and edge["kind"] in ("calls", "inherits", "reads", "writes", "references"):
+        if not file and target.startswith("uid://"):
+            file = uids.get(target)
+        if not file and edge["kind"] == "resource_reference":
+            try:
+                uid = json.loads(edge["extra"]).get("uid")
+                if isinstance(uid, str) and uid.startswith("uid://"):
+                    file = uids.get(uid)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if not file and edge["kind"] in (
+                "calls", "inherits", "reads", "writes", "references", "connect"):
             candidates = symbol_map.get(target) or symbol_map.get(target.split(".")[-1], set())
             if len(candidates) == 1:
                 file = next(iter(candidates))
@@ -294,7 +333,7 @@ def update(root, dbpath=None, full=False, check=False):
                     warnings.extend(p + ": " + w for w in result["warnings"])
                 except (OSError, UnicodeError, ValueError, sqlite3.Error) as exc:
                     raise RuntimeError("failed indexing " + p + ": " + str(exc)) from exc
-            _resolve_edges(db, current_sha)
+            _resolve_edges(db, current_sha, root)
             db.execute("INSERT OR REPLACE INTO metadata VALUES('head',?)", (revision,))
             db.execute("INSERT OR REPLACE INTO metadata VALUES('root',?)", (str(root),))
             db.execute("INSERT OR REPLACE INTO metadata VALUES('parser',?)", (PARSER_VERSION,))
