@@ -111,6 +111,17 @@ def parser():
     c.add_argument("--line", type=int, default=1)
     c.add_argument("--before", type=int, default=6)
     c.add_argument("--after", type=int, default=12)
+    for command in ("semantic-build", "semantic-query"):
+        semantic = commands.add_parser(command)
+        semantic.add_argument("--provider", choices=["local", "remote"], default="local")
+        semantic.add_argument("--model", default="all-MiniLM-L6-v2")
+        semantic.add_argument("--endpoint", default=None)
+        semantic.add_argument("--allow-upload", action="store_true")
+        if command == "semantic-build":
+            semantic.add_argument("--max-items", type=int, default=10000)
+        else:
+            semantic.add_argument("phrase")
+            semantic.add_argument("--limit", type=int, default=10)
     return p
 
 def main(argv=None):
@@ -144,6 +155,14 @@ def main(argv=None):
         elif args.command == "context":
             result = context(root, args.path, args.line, args.before,
                              args.after, dbpath=args.database)
+        elif args.command in ("semantic-build", "semantic-query"):
+            from native_semantic import index_vectors, semantic_query
+            if args.command == "semantic-build":
+                result = index_vectors(root, args.provider, args.model,
+                                       args.endpoint, args.allow_upload, args.max_items)
+            else:
+                result = semantic_query(root, args.phrase, args.provider, args.model,
+                                        args.endpoint, args.allow_upload, args.limit)
         elif args.command == "sync-status":
             result = sync_status(root)
         elif args.command == "export-routes":
