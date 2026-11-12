@@ -3,6 +3,8 @@ import asyncio
 import importlib.util
 from pathlib import Path
 import sys
+import subprocess
+import socket
 import tempfile
 import unittest
 
@@ -48,6 +50,51 @@ class MCPIntegrationTests(unittest.TestCase):
                     self.assertFalse(denied.is_error, denied)
                     self.assertIn("index writes disabled", str(denied.content))
             asyncio.run(check())
+
+    def test_streamable_http_loopback(self):
+        from mcp import Client
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "hello.py").write_text("def hello(): return 1\n", "utf-8")
+            update(root)
+            with socket.socket() as sock:
+                sock.bind(("127.0.0.1", 0))
+                port = sock.getsockname()[1]
+            server = subprocess.Popen(
+                [sys.executable, str(SCRIPTS / "native_mcp.py"),
+                 "--project", str(root), "--transport", "streamable-http",
+                 "--port", str(port)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+            try:
+                async def run():
+                    last = None
+                    for _ in range(15):
+                        if server.poll() is not None:
+                            break
+                        try:
+                            async with Client(f"http://127.0.0.1:{port}/mcp") as client:
+                                tools = await client.list_tools()
+                                names = {entry.name for entry in tools.tools}
+                                self.assertIn("melavonmen_find_symbol", names)
+                                response = await client.call_tool(
+                                    "melavonmen_find_symbol", {"name": "hello"})
+                                self.assertFalse(response.is_error)
+                                self.assertIn("hello", str(response.content))
+                                return
+                        except (OSError, ConnectionError, TimeoutError) as exc:
+                            last = exc
+                            await asyncio.sleep(.3)
+                    raise AssertionError(f"HTTP handshake failed: {last}")
+                asyncio.run(run())
+            finally:
+                server.terminate()
+                try:
+                    server.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    server.kill()
+                    server.wait(timeout=5)
+                if server.stderr:
+                    server.stderr.close()
 
 if __name__ == "__main__":
     unittest.main()
