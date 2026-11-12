@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>下载 / DOWNLOADS · Melavonmen</title>
-<meta name="description" content="Melavonmen 的下载页：AI Agent Work Stream skill「melavonmen 2.3.1」归档下载、安装步骤与完整性校验值。">
+<meta name="description" content="下载 Melavonmen 3.0.0 Codex 插件，查看源码检索、Doc/Wiki 同步、安装步骤与 SHA-256 校验值。">
 <meta name="theme-color" content="#10110f">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -28,56 +28,57 @@
   <section class="page-head dl-hero">
     <p class="eyebrow">MELAVONMEN / DOWNLOADS / 001</p>
     <h1>下载 <span>DOWNLOADS.</span></h1>
-    <p class="sub">这里放可以直接拿走的东西。目前只有一件：AI Agent Work Stream skill <strong>melavonmen 2.3.1</strong> —— 一套面向长期项目的文档 / Wiki / 素材交付纪律，附带 5 个离线校验器。</p>
+    <p class="sub"><strong>Melavonmen 3.0.0</strong> 将代码搜索、调用图和变更影响分析接入 Doc/Wiki 工作流。</p>
     <div class="actions">
-      <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip">下载 skill 2.3.1 ↓</a>
-      <a class="btn" href="https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1" target="_blank" rel="noopener noreferrer">Release 说明 ↗</a>
+      <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v3.0.0/melavonmen-3.0.0.zip">下载 3.0.0 ↓</a>
+      <a class="btn" href="https://github.com/LXFLGH/melavonmen/releases/tag/v3.0.0" target="_blank" rel="noopener noreferrer">Release 说明 ↗</a>
     </div>
     <div class="dl-decor" aria-hidden="true">↓</div>
   </section>
 
   <section class="dl-grid">
     <article class="dl-card" aria-labelledby="skill-title">
-      <p class="dl-kicker">SKILL / AGENT WORK STREAM</p>
-      <h2 id="skill-title">melavonmen 2.3.1</h2>
-      <p>需求编译、文档先行、Doc↔Wiki 双向同步、素材一图一文件交付。装上之后，Agent 会在动手前先读文档与索引，改完必须回写契约并跑校验。</p>
+      <p class="dl-kicker">SKILL / CODEX PLUGIN</p>
+      <h2 id="skill-title">Melavonmen 3.0.0</h2>
+      <p>在 Codex 中搜索源码、定位定义、沿调用图检查变更影响，再把核实过的实现事实同步到 Wiki。插件使用 open-codebase-index 0.38.2，并保留 Doc/Wiki、素材和漂移校验器。</p>
       <div class="lab-tags" aria-label="内容标签">
-        <span>DOC / WIKI</span><span>5 CLI VALIDATORS</span><span>PY 3.10+ STDLIB</span><span>18 TESTS</span>
+        <span>CODEX</span><span>23 MCP TOOLS</span><span>DOC / WIKI</span>
       </div>
       <div class="dl-actions">
-        <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip">下载 .zip · 43,753 B ↓</a>
-        <a class="btn" href="downloads/melavonmen-2.3.1.zip">站点镜像 ↓</a>
-        <a class="btn" href="https://github.com/LXFLGH/melavonmen/tree/main/skill/melavonmen" target="_blank" rel="noopener noreferrer">浏览包内容 ↗</a>
+        <a class="btn btn-primary" href="https://github.com/LXFLGH/melavonmen/releases/download/v3.0.0/melavonmen-3.0.0.zip">下载 .zip · 65,640 B ↓</a>
+        <a class="btn" href="downloads/melavonmen-3.0.0.zip">站点镜像 ↓</a>
+        <a class="btn" href="https://github.com/LXFLGH/melavonmen/tree/v3.0.0/skill/melavonmen" target="_blank" rel="noopener noreferrer">浏览源码 ↗</a>
       </div>
-      <pre class="dl-code">unzip melavonmen-2.3.1.zip
-cp -R melavonmen-2.3.1/. ~/.workbuddy/skills/melavonmen/
-python -m unittest discover -s ~/.workbuddy/skills/melavonmen/scripts/tests -v
-<span style="color:#93a08a"># 18 tests, 0 failed → 安装完成</span></pre>
-      <p class="dl-hash">sha256 69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b<br>两个入口同一文件：GitHub Releases（主）+ 本仓库 downloads/（镜像，不走 Releases 域名）</p>
+      <pre class="dl-code">unzip melavonmen-3.0.0.zip
+cd melavonmen-3.0.0
+python3 runtime/package_plugin.py
+codex plugin marketplace add "$(pwd)"
+codex plugin add melavonmen@melavonmen-local</pre>
+      <p>需要 Python 3.10+、Node.js 22.13+。首次下载后端需要 npm 或 Corepack。安装后在目标项目打开新聊天，调用 <code>$melavonmen:melavonmen</code>。</p>
+      <p class="dl-hash">sha256 8a04224d9a62081a7aed38e4b8816939adfea489e8caf121cb2cc3357bc373d3<br>Release 与站点镜像使用同一个 ZIP。</p>
     </article>
 
     <div class="dl-side">
       <article class="dl-mini">
-        <h3>本版要点 / 2.3.1</h3>
+        <h3>代码检索</h3>
         <ul class="dl-list">
-          <li><strong>素材一图一文件</strong>：贴图、图标、立绘、瓦片各自独立成文件，禁止混装。</li>
-          <li><strong>精灵表是唯一例外</strong>：多帧合图必须带 atlas 元数据、逐帧源文件与 <code>kind:"sprite_sheet"</code> 登记。</li>
-          <li><strong>Wiki 解耦</strong>：一页一源文件、事实唯一副本；可读性排序 AI 可读 → 机器可解析 → 人类可读。</li>
-          <li><strong>validate_assets</strong>：核 sprites、atlas 帧数与越界、尺寸/哈希、逐帧源存在性。</li>
+          <li><strong>结构索引</strong>可在本地运行，支持关键词、定义定位、调用图和分支刷新。</li>
+          <li><strong>混合检索</strong>在配置嵌入模型后支持按含义找源码和搜索相似实现。</li>
+          <li><strong>Wiki 校验</strong>可发现漏收录源码、失效符号路由、过期页哈希和 Unicode 路径重命名。</li>
         </ul>
       </article>
       <article class="dl-mini">
         <h3>包内结构</h3>
         <ul class="dl-list">
-          <li><code>SKILL.md</code> — 入口与 7 条硬规则</li>
-          <li><code>references/</code> — 11 篇按需加载规则</li>
-          <li><code>scripts/</code> — index / schema / symbols / assets / drift</li>
-          <li><code>templates/</code> — Doc、Wiki、素材清单样板</li>
+          <li><code>SKILL.md</code> 和 <code>references/</code> · 检索、Doc/Wiki 和素材交付流程</li>
+          <li><code>runtime/</code> · Codex 打包、MCP 启动和锁定依赖</li>
+          <li><code>scripts/</code> 和 <code>templates/</code> · 五个校验器及文档样板</li>
         </ul>
       </article>
       <article class="dl-mini">
         <h3>版本与历史</h3>
         <ul class="dl-list">
+          <li><strong>3.0.0</strong> · Codex 插件、代码检索和调用图（2026-11-12）</li>
           <li><strong>2.3.1</strong> — 精灵表契约 + 素材校验器（2026-10-30）</li>
           <li><strong>2.3.0</strong> — Wiki 解耦与可读性优先级</li>
           <li><strong>2.2.0</strong> — 素材一图一文件</li>
@@ -87,7 +88,7 @@ python -m unittest discover -s ~/.workbuddy/skills/melavonmen/scripts/tests -v
     </div>
   </section>
 
-  <p class="dl-note">校验器只做机器可验证的部分：索引、路由、Python 签名、素材清单与哈希。跨语言签名、像素内容是否“一图一素材”、业务语义正确性仍需人工复核 —— 0 errors 不等于全都对。</p>
+  <p class="dl-note">校验器检查文件覆盖、路由、Python 声明、素材清单和哈希。跨语言签名、图像内容和业务行为仍需结合源码、测试与目视检查核实。</p>
 </main>
 
 <footer class="site-footer">

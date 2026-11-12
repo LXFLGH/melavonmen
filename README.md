@@ -69,19 +69,9 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 - 飞跃幻想乡：当前仓库已有 HD-2D 城镇漫游和分区加载原型；魔理沙扫帚飞行与完整探索游戏尚未由现有 README 证实。
 - 开发日志保留其历史时间背景。要修改进度信息时一并检查首页、关于页、游戏页和本说明，修改截图时另核对实际图片与采集时间。
 
-## 下载页与 skill 发布（2026-10-31）
+## 下载页与 Skill 发布（2026-11-12）
 
-- `downloads.html`：下载入口页，Acid Graphics 版式，卡片化展示版本、体积、sha256、安装命令与包内结构。
-- GitHub Release `v2.3.1`（标记为 latest）：资产 `melavonmen-2.3.1.zip`，43,753 B，sha256 `69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b`。
-  - 直链：`https://github.com/LXFLGH/melavonmen/releases/download/v2.3.1/melavonmen-2.3.1.zip`
-  - 说明页：`https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1`
-- 发新版流程：本地 `git archive` 出 zip → 建/更新 Release 并上传资产 → 同步 `downloads.html` 的版本号、体积、sha256 与版本历史 → 更新本段。
-
-## melavonmen Skill 归档（2026-10-30）
-
-Agent Work Stream skill 的发布归档，与站点页面解耦，纯静态文件，不参与首页/作品页渲染。
-
-- `skill/melavonmen/`：可直接覆盖安装的 skill 包（`SKILL.md` + `references/` + `scripts/` + `templates/`），版本 **2.3.1**。
-- `downloads/melavonmen-2.3.1.zip`：同一份内容的归档包（`git archive 2.3.1` 生成，不含 `.git`），43,753 字节，sha256 `69157bf9fe9c3b6e00f6dbf4542f9bb707cd002df681ffe755d227a96e8ae15b`。
-- 安装：解压后覆盖到 `~/.workbuddy/skills/melavonmen/`；校验器仅需 Python 3.10+ 标准库，自测 `python -m unittest discover -s scripts/tests`。
-- 版本口径：zip 名、git tag 与 `SKILL.md` 的 `version` 统一为 `2.3.1`；更新 skill 时同步包内容、zip 与本段说明。
+- `downloads.html` 展示 Melavonmen 3.0.0 的功能、安装步骤和校验值。
+- `skill/melavonmen/` 包含 Skill、校验器和 Codex 插件源码。进入该目录后执行 `python3 runtime/package_plugin.py` 构建安装目录，完整步骤见 [安装说明](skill/melavonmen/README.md)。
+- [GitHub Release v3.0.0](https://github.com/LXFLGH/melavonmen/releases/tag/v3.0.0) 和 [站点镜像](downloads/melavonmen-3.0.0.zip) 提供同一个 65,640 B 的 ZIP。SHA-256 为 `8a04224d9a62081a7aed38e4b8816939adfea489e8caf121cb2cc3357bc373d3`。
+- 旧版纯 Skill 包见 [v2.3.1](https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1)。
