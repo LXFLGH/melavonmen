@@ -213,7 +213,7 @@ def _insert(db, root, relative, revision, maximum):
                (relative, lang, digest, revision, data["depth"],
                 PARSER_VERSION, len(raw), time.time()))
     for sym in data["symbols"]:
-        extras = {k: v for k, v in sym.items() if k in {"parameters", "return_type", "module"}}
+        extras = {k: v for k, v in sym.items() if k in {"parameters", "return_type", "module", "parent_path", "node_type", "scene_path"}}
         db.execute("""INSERT INTO symbols
          (path,name,qualified_name,kind,signature,line_start,line_end,
           source_sha256,revision,extraction_method,verification_status,extra)
