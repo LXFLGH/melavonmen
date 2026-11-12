@@ -618,14 +618,45 @@ def references(root, symbol, limit=100, dbpath=None):
             "warnings": ["These are statically known edges; dynamic uses may be missing"]}
 
 def graph(root, name, reverse=False, depth=2, limit=200, kinds=None, dbpath=None):
+    """Find direct symbol-level relations then conservatively extend via files.
+
+    Intermediate hops use file dependency edges, so all multi-hop results are
+    candidates, not a proof of dynamic execution flow.
+    """
     db = connect(Path(root).resolve(), dbpath, readonly=True)
     depth = max(0, min(int(depth), 8))
     limit = min(max(1, int(limit)), 1000)
     allfiles = {r["path"] for r in db.execute("SELECT path FROM files")}
-    start = {name} if name in allfiles else {
-        r["path"] for r in db.execute(
-            "SELECT path FROM symbols WHERE name=? OR qualified_name=?", (name, name))}
-    edges, seen, pending = [], set(start), deque((x, 0) for x in start)
+    declarations = [] if name in allfiles else _safe_rows(
+        db, "SELECT path,name,qualified_name,line_start,line_end FROM symbols "
+            "WHERE name=? OR qualified_name=?", (name, name))
+    start = {name} if name in allfiles else {r["path"] for r in declarations}
+    edges, seen, pending = [], set(start), deque()
+    if declarations and depth > 0:
+        for symbol in declarations:
+            if reverse:
+                sql = "SELECT * FROM edges WHERE target_name=? OR target_name=? OR target_name LIKE ?"
+                candidates = db.execute(sql, (symbol["name"], symbol["qualified_name"],
+                                              "%." + symbol["name"]))
+            else:
+                candidates = db.execute(
+                    "SELECT * FROM edges WHERE path=? AND line_start BETWEEN ? AND ?",
+                    (symbol["path"], symbol["line_start"], symbol["line_end"]))
+            for edge in candidates:
+                if kinds and edge["kind"] not in kinds:
+                    continue
+                e = dict(edge)
+                edges.append(e)
+                nxt = e["path"] if reverse else e["target_file"]
+                if nxt and nxt not in seen:
+                    seen.add(nxt)
+                    pending.append((nxt, 1))
+                if len(edges) >= limit:
+                    break
+            if len(edges) >= limit:
+                break
+    elif name in allfiles:
+        pending.append((name, 0))
     while pending and len(edges) < limit:
         current, layer = pending.popleft()
         if layer >= depth:
@@ -646,7 +677,10 @@ def graph(root, name, reverse=False, depth=2, limit=200, kinds=None, dbpath=None
     return {"root": name, "reverse": reverse, "depth": depth,
             "visited_files": sorted(seen), "edges": edges,
             "truncated": bool(pending) or len(edges) >= limit,
-            "warnings": [] if start else ["symbol or file was not indexed"]}
+            "resolution": "symbol-first/file-extension" if declarations else "file",
+            "warnings": (["indirect graph steps are conservative file-level candidates"]
+                         if declarations and depth > 1 else
+                         ([] if start else ["symbol or file was not indexed"]))}
 
 def impact(root, changed, depth=3, dbpath=None):
     db = connect(Path(root).resolve(), dbpath, readonly=True)
