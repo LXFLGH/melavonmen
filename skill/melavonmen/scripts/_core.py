@@ -127,6 +127,25 @@ def index(project, errors, warnings, stats):
             deep = sum(isinstance(s, dict) and s.get("coverage") == "deep" for s in inventory)
             if main.get("deep_sources") != deep:
                 errors.append("wiki.deep_sources disagrees with inventory coverage")
+            # Cross-check the declared Wiki inventory against an independently
+            # enumerated first-party source set. The existing len(sources) checks
+            # cannot prove coverage, even if every declared row is valid.
+            try:
+                from native_engine import config as native_config, discover as native_discover
+                from native_parsers import language_for
+                actual_sources, physical = native_discover(project, native_config(project))
+                registered_supported = {p for p in seen if language_for(p)}
+                missing_in_wiki = sorted(actual_sources - registered_supported)
+                extra_in_wiki = sorted(registered_supported - actual_sources)
+                errors.extend(f"wiki source not registered in independent scan: {p}"
+                              for p in extra_in_wiki)
+                errors.extend(f"first-party source missing from wiki inventory: {p}"
+                              for p in missing_in_wiki)
+                stats["wiki_independent_first_party_sources"] = len(physical)
+                stats["wiki_independent_missing_sources"] = len(missing_in_wiki)
+                stats["wiki_independent_orphan_sources"] = len(extra_in_wiki)
+            except (OSError, ValueError, ImportError) as exc:
+                warnings.append("independent source audit unavailable: " + str(exc))
             stats["wiki_total_sources"] = len(inventory)
             stats["wiki_deep_sources"] = deep
         for i, route in enumerate(entries(main.get("task_routes"))):
