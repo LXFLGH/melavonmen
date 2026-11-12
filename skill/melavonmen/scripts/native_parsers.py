@@ -285,7 +285,7 @@ def parse_godot(text, path, sha, revision, lang, out):
                              "connect", attrs.get("signal", ""), line,
                              status="verified", signal=attrs.get("signal"),
                              from_node=attrs.get("from"), to_node=attrs.get("to"),
-                             method=attrs.get("method"))
+                             handler_method=attrs.get("method"))
             for m in re.finditer(r'ExtResource\("([^"]+)"\)', value):
                 relation(out, path, sha, revision, "godot_resource",
                          "resource_reference", resources.get(m.group(1), m.group(1)),
