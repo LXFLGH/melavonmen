@@ -605,11 +605,69 @@ def context(root, path, line=1, before=6, after=12, dbpath=None):
             "lines": [{"line": i, "text": lines[i-1][:2048]}
                       for i in range(start, end+1)]}
 
+def cycles(root, kinds=None, dbpath=None, max_cycles=100):
+    """Tarjan SCC: only indexed, statically linked file edges."""
+    db = connect(Path(root).resolve(), dbpath, readonly=True)
+    accepted = set(kinds or ["imports", "depends_on", "resource_reference"])
+    adjacency = {r["path"]: set() for r in db.execute("SELECT path FROM files")}
+    for e in db.execute("SELECT path,target_file,kind FROM edges WHERE target_file IS NOT NULL"):
+        if e["kind"] in accepted and e["target_file"] in adjacency:
+            adjacency[e["path"]].add(e["target_file"])
+    index = 0
+    stack, active, numbers, low, found = [], set(), {}, {}, []
+    def visit(v):
+        nonlocal index
+        numbers[v] = low[v] = index
+        index += 1
+        stack.append(v)
+        active.add(v)
+        for w in sorted(adjacency[v]):
+            if w not in numbers:
+                visit(w)
+                low[v] = min(low[v], low[w])
+            elif w in active:
+                low[v] = min(low[v], numbers[w])
+        if low[v] == numbers[v]:
+            component = []
+            while True:
+                w = stack.pop()
+                active.remove(w)
+                component.append(w)
+                if w == v:
+                    break
+            if len(component) > 1 or (component and component[0] in adjacency[component[0]]):
+                found.append(sorted(component))
+    try:
+        for v in sorted(adjacency):
+            if v not in numbers:
+                visit(v)
+    except RecursionError:
+        db.close()
+        return {"cycles": found, "warnings": ["graph recursion limit; partial cycle report"]}
+    db.close()
+    return {"cycles": found[:max_cycles], "truncated": len(found) > max_cycles,
+            "kinds": sorted(accepted), "warnings": []}
+
+def unresolved(root, limit=100, dbpath=None):
+    """Known unresolved edges; a dynamic call is never silently 'resolved'."""
+    db = connect(Path(root).resolve(), dbpath, readonly=True)
+    rows = _safe_rows(db, """SELECT * FROM edges WHERE target_file IS NULL
+               AND kind NOT IN ('reads','writes') ORDER BY path,line_start LIMIT ?""",
+               (max(1, min(int(limit), 500)),))
+    db.close()
+    return {"count": len(rows), "edges": rows,
+            "warning": "Unresolved may include built-ins/external libraries and dynamic dispatch"}
+
 def sync_status(root, changed=None, dbpath=None):
+    """Source-provenance checks plus a minimal plan; never promotes Doc states."""
     root = Path(root).resolve()
     changed = changed or []
-    candidate = []
-    missing_refs = []
+    candidates, missing_refs, stale_wiki, unverified = [], [], [], []
+    symbol_db = None
+    try:
+        symbol_db = connect(root, dbpath, readonly=True)
+    except (OSError, sqlite3.Error, ValueError):
+        pass
     for section in ("doc", "wiki"):
         folder = root / section
         if not folder.is_dir():
@@ -618,16 +676,78 @@ def sync_status(root, changed=None, dbpath=None):
             if p.is_symlink() or not p.resolve().is_relative_to(root):
                 continue
             try:
-                data = p.read_text("utf-8")
-            except (OSError, UnicodeError):
+                content = p.read_text("utf-8")
+                obj = json.loads(content)
+            except (OSError, UnicodeError, ValueError):
+                unverified.append({"page": p.relative_to(root).as_posix(),
+                                   "reason": "unreadable or invalid JSON"})
                 continue
             rel = p.relative_to(root).as_posix()
-            if any(name in data for name in changed):
-                candidate.append(rel)
-            for ref in re.findall(r'"(?:source_path|path)"\s*:\s*"([^"]+\.(?:gd|py|cs|cpp|ts|js))"', data):
-                if not (root / ref).is_file():
-                    missing_refs.append({"page": rel, "source": ref})
-    return {"changed_sources": changed, "candidates": sorted(set(candidate)),
-            "missing_source_references": missing_refs,
-            "state": "review_required" if candidate or missing_refs else "no_known_change",
-            "note": "Business semantics and Doc contract status require agent/human review"}
+            if any(name in content for name in changed):
+                candidates.append(rel)
+            if not isinstance(obj, dict):
+                continue
+            entries = list(obj.get("sources", [])) if isinstance(obj.get("sources"), list) else []
+            if isinstance(obj.get("source_path"), str):
+                entries.append({"path": obj["source_path"],
+                                "sha256": obj.get("source_sha256")})
+            if section == "doc":
+                # Only cross-check known first-party source paths, not doc-relative routes.
+                for key in ("source_paths", "affected_source_paths"):
+                    value = obj.get(key, [])
+                    if isinstance(value, list):
+                        entries.extend({"path": x} for x in value if isinstance(x, str))
+            for source in entries:
+                if not isinstance(source, dict):
+                    continue
+                source_path = source.get("path")
+                if not isinstance(source_path, str):
+                    continue
+                try:
+                    code = inside(root, source_path)
+                except ValueError:
+                    missing_refs.append({"page": rel, "source": source_path, "reason": "unsafe_path"})
+                    continue
+                if not code.is_file():
+                    missing_refs.append({"page": rel, "source": source_path, "reason": "deleted"})
+                    continue
+                declared_hash = source.get("sha256")
+                if declared_hash and declared_hash != hashlib.sha256(code.read_bytes()).hexdigest():
+                    stale_wiki.append({"page": rel, "source": source_path,
+                                       "kind": "source_sha256"})
+            if section == "wiki" and symbol_db and obj.get("source_path"):
+                source_path = obj["source_path"]
+                for decl in obj.get("declarations", []):
+                    if not isinstance(decl, dict) or not isinstance(decl.get("qualified_name"), str):
+                        continue
+                    row = symbol_db.execute(
+                        "SELECT signature,line_start,verification_status FROM symbols "
+                        "WHERE path=? AND qualified_name=? LIMIT 1",
+                        (source_path, decl["qualified_name"])).fetchone()
+                    if not row:
+                        unverified.append({"page": rel, "symbol": decl["qualified_name"],
+                                           "reason": "missing_from_native_index"})
+                    elif row["verification_status"] == "verified":
+                        if (decl.get("signature") != row["signature"] or
+                                (decl.get("line_start") is not None and
+                                 decl["line_start"] != row["line_start"])):
+                            stale_wiki.append({"page": rel,
+                                               "symbol": decl["qualified_name"],
+                                               "kind": "signature_or_location"})
+                    else:
+                        unverified.append({"page": rel, "symbol": decl["qualified_name"],
+                                           "reason": "parser_cannot_certify_semantics"})
+    if symbol_db:
+        symbol_db.close()
+    tasks = [{"page": path, "action": "review_contract_if_affected"
+              if path.startswith("doc/") else "review_current_wiki_facts"}
+             for path in sorted(set(candidates))]
+    tasks += [{"page": x["page"], "action": "repair_missing_source_reference",
+               "source": x["source"]} for x in missing_refs]
+    tasks += [{"page": x["page"], "action": "verify_and_update_source_evidence",
+               "source_or_symbol": x.get("source", x.get("symbol"))} for x in stale_wiki]
+    return {"changed_sources": changed, "candidates": sorted(set(candidates)),
+            "missing_source_references": missing_refs, "stale_wiki": stale_wiki,
+            "unverified": unverified, "tasks": tasks,
+            "state": "review_required" if tasks else "no_known_change",
+            "note": "Business semantics and Doc contract state require human/agent review"}
