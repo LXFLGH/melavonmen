@@ -102,6 +102,9 @@ def eligible(rel, conf):
         return False
     if rel in {".melavonmen.json"} or rel.endswith(".min.js") or Path(rel).suffix.lower() in SKIP_EXT:
         return False
+    if "assets" in parts[:-1] and language_for(rel) not in {
+            "gdscript", "godot_resource", "godot_project"}:
+        return False
     if not language_for(rel):
         return False
     patterns = conf["include"]
@@ -123,7 +126,8 @@ def physical_scan(root, conf):
     for current, dirs, files in os.walk(root, followlinks=False):
         rel_dir = Path(current).relative_to(root)
         dirs[:] = [d for d in dirs if d not in EXCLUDED and
-                   not (Path(current) / d).is_symlink()]
+                   not (Path(current) / d).is_symlink() and
+                   not (Path(current) / d / ".git").exists()]
         for name in files:
             path = Path(current) / name
             if path.is_symlink():
