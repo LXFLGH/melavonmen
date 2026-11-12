@@ -81,10 +81,11 @@ class MCPIntegrationTests(unittest.TestCase):
                                 self.assertFalse(response.is_error)
                                 self.assertIn("hello", str(response.content))
                                 return
-                        except (OSError, ConnectionError, TimeoutError) as exc:
+                        except Exception as exc:
                             last = exc
                             await asyncio.sleep(.3)
-                    raise AssertionError(f"HTTP handshake failed: {last}")
+                    stderr = server.stderr.read() if server.poll() is not None else ""
+                    raise AssertionError(f"HTTP handshake failed: {last}; server stderr: {stderr}")
                 asyncio.run(run())
             finally:
                 server.terminate()
