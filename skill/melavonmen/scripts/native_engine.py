@@ -100,7 +100,7 @@ def eligible(rel, conf):
     parts = Path(rel).parts
     if any(part in EXCLUDED for part in parts[:-1]):
         return False
-    if rel.endswith(".min.js") or Path(rel).suffix.lower() in SKIP_EXT:
+    if rel in {".melavonmen.json"} or rel.endswith(".min.js") or Path(rel).suffix.lower() in SKIP_EXT:
         return False
     if not language_for(rel):
         return False
