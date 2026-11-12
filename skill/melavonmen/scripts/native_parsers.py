@@ -12,7 +12,7 @@ import re
 import tomllib
 from pathlib import Path
 
-PARSER_VERSION = "native-3"
+PARSER_VERSION = "native-4"
 LANGUAGES = {
     ".py": "python", ".gd": "gdscript", ".js": "javascript", ".jsx": "javascript",
     ".mjs": "javascript", ".cjs": "javascript", ".ts": "typescript",
