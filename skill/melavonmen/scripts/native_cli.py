@@ -125,7 +125,7 @@ def parser():
     p.add_argument("--database", default=None, help="relative SQLite path inside workspace")
     p.add_argument("--human", action="store_true")
     commands = p.add_subparsers(dest="command", required=True)
-    for cmd in ("build", "update", "check", "audit", "doctor", "rebuild",
+    for cmd in ("build", "update", "check", "audit", "doctor", "rebuild", "migrate",
                 "sync-status", "export-routes", "benchmark", "cycles", "unresolved", "watch"):
         sub = commands.add_parser(cmd)
         if cmd in ("build", "update"):
@@ -197,7 +197,7 @@ def main(argv=None):
             result = cycles(root, dbpath=args.database)
         elif args.command == "unresolved":
             result = unresolved(root, args.limit, args.database)
-        elif args.command == "rebuild":
+        elif args.command in ("rebuild", "migrate"):
             result = rebuild(root, args.database)
         elif args.command == "query":
             result = query(root, args.phrase, mode=args.mode, limit=args.limit,
