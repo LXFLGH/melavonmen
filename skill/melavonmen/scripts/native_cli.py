@@ -12,6 +12,8 @@ import json
 import os
 from pathlib import Path
 import statistics
+import shutil
+import subprocess
 import sys
 import time
 
@@ -24,6 +26,7 @@ def benchmark(root, database, phrases, runs=5):
     # No user data is deleted: the benchmark gets its own unique cache path.
     temp = ".melavonmen/bench-" + str(os.getpid()) + "-" + str(time.time_ns()) + ".sqlite"
     measurements = {"cold_build_ms": 0, "warm_update_ms": [], "query_ms": [],
+                    "ripgrep_ms": [], "result_estimated_tokens": [],
                     "queries": phrases}
     try:
         start = time.perf_counter()
@@ -35,8 +38,19 @@ def benchmark(root, database, phrases, runs=5):
             measurements["warm_update_ms"].append((time.perf_counter() - start) * 1000)
             for phrase in phrases:
                 start = time.perf_counter()
-                query(root, phrase, dbpath=temp)
+                response = query(root, phrase, dbpath=temp)
                 measurements["query_ms"].append((time.perf_counter() - start) * 1000)
+                measurements["result_estimated_tokens"].append(
+                    max(1, len(json.dumps(response, ensure_ascii=False)) // 4))
+                if shutil.which("rg"):
+                    start_rg = time.perf_counter()
+                    subprocess.run(["rg", "--no-messages", "--fixed-strings",
+                                    "--glob", "!.melavonmen/**", "--glob", "!.git/**",
+                                    "--", phrase, str(root)],
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL, timeout=30)
+                    measurements["ripgrep_ms"].append(
+                        (time.perf_counter() - start_rg) * 1000)
         def dist(samples):
             samples = sorted(samples)
             if not samples:
@@ -46,6 +60,20 @@ def benchmark(root, database, phrases, runs=5):
                     "runs": len(samples)}
         measurements["warm_update"] = dist(measurements.pop("warm_update_ms"))
         measurements["query"] = dist(measurements.pop("query_ms"))
+        measurements["ripgrep_baseline"] = dist(measurements.pop("ripgrep_ms"))
+        estimated = measurements.pop("result_estimated_tokens")
+        measurements["response_estimated_tokens"] = {
+            "p50": round(statistics.median(estimated), 1) if estimated else 0,
+            "method": "serialized JSON chars / 4 heuristic, not a model tokenizer"}
+        indexed_bytes = connect(Path(root).resolve(), temp, readonly=True)
+        try:
+            size = indexed_bytes.execute("SELECT COALESCE(SUM(bytes),0) FROM files").fetchone()[0]
+            measurements["whole_source_estimated_tokens"] = size // 4
+        finally:
+            indexed_bytes.close()
+        measurements["comparison_note"] = (
+            "ripgrep is a repeatable raw-search proxy, NOT a proprietary Codebase Index; "
+            "compare latency and approximate context payload only")
         measurements["stats"] = result["stats"]
         return measurements
     finally:
@@ -53,6 +81,24 @@ def benchmark(root, database, phrases, runs=5):
             path = inside(Path(root).resolve(), temp + suffix)
             if path.is_file():
                 path.unlink()
+
+def watch(root, database, interval=2, iterations=0):
+    """Explicit foreground polling: safe across worktrees and missed events."""
+    count = 0
+    try:
+        while iterations == 0 or count < iterations:
+            result = update(root, database)
+            print(json.dumps({"event": "index_refreshed",
+                              "changed": result["changed"],
+                              "deleted": result["deleted"],
+                              "ok": result["ok"]}, ensure_ascii=False), flush=True)
+            count += 1
+            if iterations and count >= iterations:
+                break
+            time.sleep(max(0.2, min(float(interval), 300)))
+    except KeyboardInterrupt:
+        pass
+    return {"ok": True, "polls": count}
 
 def export_routes(root, database):
     root = Path(root).resolve()
@@ -76,10 +122,13 @@ def parser():
     p.add_argument("--human", action="store_true")
     commands = p.add_subparsers(dest="command", required=True)
     for cmd in ("build", "update", "check", "audit", "doctor", "rebuild",
-                "sync-status", "export-routes", "benchmark", "cycles", "unresolved"):
+                "sync-status", "export-routes", "benchmark", "cycles", "unresolved", "watch"):
         sub = commands.add_parser(cmd)
         if cmd in ("build", "update"):
             sub.add_argument("--full", action="store_true")
+        if cmd == "watch":
+            sub.add_argument("--interval", type=float, default=2.0)
+            sub.add_argument("--iterations", type=int, default=0)
         if cmd == "unresolved":
             sub.add_argument("--limit", type=int, default=100)
         if cmd == "benchmark":
@@ -130,6 +179,8 @@ def main(argv=None):
     args = parser().parse_args(argv)
     root = args.project.resolve()
     try:
+        if args.command == "watch":
+            return 0 if watch(root, args.database, args.interval, args.iterations)["ok"] else 1
         if args.command in ("build", "update", "check"):
             result = update(root, args.database,
                             full=getattr(args, "full", False),
