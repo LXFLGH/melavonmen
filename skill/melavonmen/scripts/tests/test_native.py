@@ -1,5 +1,6 @@
 """Native intelligence regression and acceptance fixtures; standard unittest runner."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import sqlite3
@@ -334,6 +335,47 @@ class NativeIndexTests(unittest.TestCase):
         self.assertIn("raw_search_baseline", data)
         self.assertIn("p50_ms", data["raw_search_baseline"])
         self.assertTrue(data["stats"]["indexed_sources"] >= 9)
+
+    @unittest.skipUnless(importlib.util.find_spec("tree_sitter_language_pack") and
+                         importlib.util.find_spec("tree_sitter"),
+                         "install optional tree-sitter language pack")
+    def test_legacy_wiki_validator_verifies_typescript_signature(self):
+        file = self.root / "src/main.ts"
+        sha = hashlib.sha256(file.read_bytes()).hexdigest()
+        facts = parse_file(file, "src/main.ts", "typescript", sha, "fixture")
+        actual = next(s for s in facts["symbols"]
+                      if s["name"] == "Price" and
+                      s["verification_status"] == "verified")
+        wiki = self.root / "wiki"
+        (wiki / "ts").mkdir(parents=True)
+        (wiki / "index.json").write_text(json.dumps({
+            "schema_version": "melavonmen.wiki/1", "project": "test",
+            "sources": [{"path": "src/main.ts", "sha256": sha, "module_id": "ts",
+                         "coverage": "deep"}],
+            "modules": [{"id": "ts", "index": "ts/index.json"}],
+            "task_routes": [], "total_sources": 1,
+            "indexed_sources": 1, "deep_sources": 1}), "utf-8")
+        (wiki / "ts/index.json").write_text(json.dumps({
+            "module_id": "ts", "pages": [{"source_path": "src/main.ts",
+                                        "page": "ts/price.json"}]}), "utf-8")
+        page = wiki / "ts/price.json"
+        page.write_text(json.dumps({
+            "source_path": "src/main.ts",
+            "declarations": [{"qualified_name": actual["qualified_name"],
+                              "signature": actual["signature"],
+                              "line_start": actual["line_start"]}]}), "utf-8")
+        cmd = [sys.executable, str(SCRIPTS / "validate_symbols.py"),
+               "--project", str(self.root)]
+        run = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        report = json.loads(run.stdout)
+        self.assertEqual(report["stats"]["verified_non_python_signatures"], 1)
+        bad = json.loads(page.read_text())
+        bad["declarations"][0]["signature"] = "class Wrong"
+        page.write_text(json.dumps(bad), "utf-8")
+        changed = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(changed.returncode, 1, changed.stdout + changed.stderr)
+        self.assertIn("signature mismatch", changed.stdout)
 
     @unittest.skipUnless(importlib.util.find_spec("tree_sitter_language_pack") and
                          importlib.util.find_spec("tree_sitter"),
