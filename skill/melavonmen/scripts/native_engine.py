@@ -85,6 +85,14 @@ def git(root, args, input_bytes=None):
 def head(root):
     return git(root, ["rev-parse", "HEAD"]).decode("ascii", "replace").strip() or "no-git"
 
+def worktree_dirty_paths(root):
+    """Changes relative to HEAD, including staged and untracked files, NUL-safe."""
+    if head(root) == "no-git":
+        return []
+    raw = git(root, ["diff", "--name-only", "-z", "HEAD", "--"])
+    raw += git(root, ["ls-files", "--others", "--exclude-standard", "-z"])
+    return sorted({os.fsdecode(x) for x in raw.split(b"\x00") if x})
+
 def config(root):
     f = root / ".melavonmen.json"
     if not f.is_file():
@@ -337,6 +345,8 @@ def update(root, dbpath=None, full=False, check=False):
             db.execute("INSERT OR REPLACE INTO metadata VALUES('head',?)", (revision,))
             db.execute("INSERT OR REPLACE INTO metadata VALUES('root',?)", (str(root),))
             db.execute("INSERT OR REPLACE INTO metadata VALUES('parser',?)", (PARSER_VERSION,))
+            db.execute("INSERT OR REPLACE INTO metadata VALUES('worktree_dirty_paths',?)",
+                       (json.dumps(worktree_dirty_paths(root), ensure_ascii=False),))
             db.commit()
         except Exception:
             db.rollback()
@@ -383,6 +393,15 @@ def audit(root, db=None, discovered=None, physical=None, hashes=None):
                "unverified_symbols": rows["count"] - (rows["verified"] or 0),
                "stale_sources": len(stale), "missing_sources": len(missing),
                "orphan_sources": len(orphan), "unresolved_edges": unknown}
+    snapshot = db.execute("SELECT value FROM metadata WHERE key='head'").fetchone()
+    dirty = db.execute(
+        "SELECT value FROM metadata WHERE key='worktree_dirty_paths'").fetchone()
+    committed_revision = snapshot["value"] if snapshot else "unknown"
+    recorded_dirty = json.loads(dirty["value"]) if dirty else []
+    live_dirty = worktree_dirty_paths(root)
+    summary.update(committed_revision=committed_revision,
+                   recorded_dirty_sources=len(set(recorded_dirty) & set(files)),
+                   current_dirty_sources=len(set(live_dirty) & discovered))
     if own:
         db.close()
     return {"ok": not (missing or orphan or stale),
