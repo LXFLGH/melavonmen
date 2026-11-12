@@ -218,6 +218,42 @@ class NativeIndexTests(unittest.TestCase):
         self.assertTrue(any(row["kind"] == "signature_or_location"
                             for row in status["stale_wiki"]))
 
+    def test_python_parameter_default_types_and_evidence(self):
+        self.write("src/types.py",
+                   "def clamp(value: int, low: int = 0, *, high: int = 10) -> int:\n"
+                   "    return min(max(value, low), high)\n")
+        update(self.root)
+        db = connect(self.root, readonly=True)
+        item = db.execute("SELECT * FROM symbols WHERE path=? AND name=?",
+                          ("src/types.py", "clamp")).fetchone()
+        self.assertIsNotNone(item)
+        self.assertEqual(item["verification_status"], "verified")
+        parameters = json.loads(item["extra"])["parameters"]
+        self.assertEqual([p["name"] for p in parameters], ["value", "low", "high"])
+        self.assertEqual(parameters[1]["default"], "0")
+        self.assertEqual(parameters[2]["type"], "int")
+        db.close()
+
+    def test_watch_incremental_polling_cli(self):
+        p = subprocess.run(
+            [sys.executable, str(SCRIPTS / "native_cli.py"),
+             "--project", str(self.root), "watch",
+             "--interval", "0.2", "--iterations", "2"],
+            capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        rows = [json.loads(row) for row in p.stdout.splitlines() if row.strip()]
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(row["ok"] for row in rows))
+
+    def test_benchmark_has_token_and_raw_search_baseline(self):
+        from native_cli import benchmark
+        data = benchmark(self.root, None, ["price"], runs=2)
+        self.assertIn("cold_build_ms", data)
+        self.assertIn("whole_source_estimated_tokens", data)
+        self.assertIn("response_estimated_tokens", data)
+        self.assertIn("ripgrep_baseline", data)
+        self.assertTrue(data["stats"]["indexed_sources"] >= 9)
+
     @unittest.skipUnless(importlib.util.find_spec("tree_sitter_language_pack") and
                          importlib.util.find_spec("tree_sitter"),
                          "install optional tree-sitter language pack")
