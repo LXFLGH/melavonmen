@@ -16,7 +16,7 @@ import sys
 import time
 
 from native_engine import (
-    audit, connect, context, doctor, graph, impact, query, rebuild, references,
+    audit, connect, context, cycles, doctor, graph, impact, query, rebuild, references, unresolved,
     sync_status, update, inside,
 )
 
@@ -76,10 +76,12 @@ def parser():
     p.add_argument("--human", action="store_true")
     commands = p.add_subparsers(dest="command", required=True)
     for cmd in ("build", "update", "check", "audit", "doctor", "rebuild",
-                "sync-status", "export-routes", "benchmark"):
+                "sync-status", "export-routes", "benchmark", "cycles", "unresolved"):
         sub = commands.add_parser(cmd)
         if cmd in ("build", "update"):
             sub.add_argument("--full", action="store_true")
+        if cmd == "unresolved":
+            sub.add_argument("--limit", type=int, default=100)
         if cmd == "benchmark":
             sub.add_argument("--runs", type=int, default=5)
             sub.add_argument("--phrase", action="append", default=[])
@@ -136,6 +138,10 @@ def main(argv=None):
             result = audit(root, connect(root, args.database, readonly=True))
         elif args.command == "doctor":
             result = doctor(root)
+        elif args.command == "cycles":
+            result = cycles(root, dbpath=args.database)
+        elif args.command == "unresolved":
+            result = unresolved(root, args.limit, args.database)
         elif args.command == "rebuild":
             result = rebuild(root, args.database)
         elif args.command == "query":
