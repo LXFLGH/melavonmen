@@ -63,14 +63,14 @@ class InstalledPlugin(unittest.TestCase):
         names = {skill["name"] for entry in skills["data"] for skill in entry["skills"]}
         self.assertIn("melavonmen:melavonmen", names)
         thread = server.call("thread/start", {"cwd": str(repo), "ephemeral": True})["thread"]["id"]
-        status = server.call("mcpServerStatus/list", {"threadId": thread, "serverName": "codebase-index"})
+        status = server.call("mcpServerStatus/list", {"threadId": thread, "serverName": "melavonmen-index"})
         self.assertEqual(len(status["data"]), 1, status)
         tools = status["data"][0]["tools"]
         self.assertEqual(len(tools), 23, tools)
 
         def call(tool, **arguments):
             result = server.call("mcpServer/tool/call", {
-                "threadId": thread, "server": "codebase-index", "tool": tool,
+                "threadId": thread, "server": "melavonmen-index", "tool": tool,
                 "arguments": arguments,
             })
             self.assertFalse(result.get("isError"), result)

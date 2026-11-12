@@ -1,97 +1,166 @@
-"""Start the pinned index engine from a lockfile-keyed local cache."""
+"""Launch Melavonmen's independent MCP server or terminal interface."""
 
-import hashlib
-import os
+import argparse
+from html import escape
+import json
 from pathlib import Path
-import platform
-import shutil
-import subprocess
+import sqlite3
 import sys
-from tempfile import TemporaryDirectory
+
+from melavonmen_index.protocol import Server
+from melavonmen_index.tools import Tools, edge_text
+from melavonmen_index.workspace import IndexErrorWithCode, Workspace, project_root
 
 
-ROOT = Path(__file__).resolve().parent
-ENTRYPOINTS = {"mcp": "cli.js", "cli": "cbi.js"}
+def base_options(parser):
+    parser.add_argument("--project", default=argparse.SUPPRESS)
+    parser.add_argument("--config", default=argparse.SUPPRESS)
+    parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    parser.add_argument("--host", choices=["codex"], default=argparse.SUPPRESS, help=argparse.SUPPRESS)
 
 
-def find_node():
-    configured = os.environ.get("MELAVONMEN_NODE")
-    if configured:
-        node = shutil.which(configured)
-        if not node:
-            raise RuntimeError("MELAVONMEN_NODE does not point to an executable Node.js")
-        return Path(node).absolute()
+def cli_parser():
+    cli = argparse.ArgumentParser(description="Melavonmen code index")
+    base_options(cli)
+    commands = cli.add_subparsers(dest="command", required=True)
 
-    candidates = []
-    if node := shutil.which("node"):
-        candidates.append(Path(node))
-    if codex := shutil.which("codex"):
-        candidates.append(Path(codex).resolve().parent / "cua_node" / "bin" / "node")
-    for candidate in candidates:
-        if candidate.is_file() and os.access(candidate, os.X_OK):
-            return candidate.absolute()
-    raise RuntimeError("Install Node.js 22.13+ or set MELAVONMEN_NODE")
+    def command(name):
+        sub = commands.add_parser(name)
+        base_options(sub)
+        return sub
+
+    status = command("status")
+    status.add_argument("--check-freshness", dest="checkFreshness", action="store_true")
+    indexing = command("index")
+    for flag, destination in (("force", "force"), ("estimate-only", "estimateOnly"), ("dry-run", "dryRun"), ("verbose", "verbose")):
+        indexing.add_argument("--" + flag, dest=destination, action="store_true")
+    command("health")
+    command("metrics")
+    command("logs").add_argument("--limit", type=int)
+    for name, dest in (("search", "query"), ("peek", "query"), ("definition", "query"), ("similar", "code"),
+                       ("context", "query"), ("edit-context", "query")):
+        search = command(name)
+        search.add_argument(dest)
+        if name != "edit-context":
+            search.add_argument("--limit", type=int)
+        if name in ("context", "edit-context", "definition"):
+            search.add_argument("--token-budget", dest="tokenBudget", type=int)
+    graph = command("graph")
+    graph.add_argument("direction", choices=["callers", "callees", "both"])
+    graph.add_argument("name")
+    graph.add_argument("--file", dest="filePath")
+    path = command("path")
+    path.add_argument("from")
+    path.add_argument("to")
+    architecture = command("architecture")
+    architecture.add_argument("--directory")
+    architecture.add_argument("--query")
+    architecture.add_argument("--depth", type=int)
+    command("communities").add_argument("--branch")
+    impact = command("impact")
+    group = impact.add_mutually_exclusive_group()
+    group.add_argument("--working-tree", dest="workingTree", action="store_true")
+    group.add_argument("--branch")
+    group.add_argument("--pr", type=int)
+    workspace = command("workspace")
+    workspace.add_argument("action", choices=["status"])
+    workspace.add_argument("--repo", action="append", required=True, metavar="NAME=PATH")
+    history = command("history")
+    history_actions = history.add_subparsers(dest="action", required=True)
+    for action in ("status", "sync", "search", "clear"):
+        sub = history_actions.add_parser(action)
+        base_options(sub)
+        sub.add_argument("--repository")
+        if action == "sync":
+            sub.add_argument("--since")
+        if action == "search":
+            sub.add_argument("query")
+            sub.add_argument("--kind")
+            sub.add_argument("--state")
+            sub.add_argument("--author")
+            sub.add_argument("--limit", type=int)
+    visualize = command("visualize")
+    visualize.add_argument("--output", type=Path, required=True)
+    return cli
 
 
-def install_runtime(env, destination):
-    npm = shutil.which("npm", path=env["PATH"])
-    corepack = shutil.which("corepack", path=env["PATH"])
-    if npm:
-        installer = [npm]
-    elif corepack:
-        installer = [corepack, "npm@11.6.2"]
+COMMANDS = {
+    "status": "index_status", "index": "index_codebase", "health": "index_health_check",
+    "metrics": "index_metrics", "logs": "index_logs", "search": "codebase_search",
+    "peek": "codebase_peek", "definition": "implementation_lookup", "similar": "find_similar",
+    "graph": "call_graph", "path": "call_graph_path", "context": "codebase_context",
+    "edit-context": "codebase_edit_context", "architecture": "architecture_context",
+    "communities": "code_communities", "impact": "pr_impact",
+}
+
+
+def render_graph(tools, destination):
+    graph = tools.graph(None)
+    paths = sorted(graph.by_file)
+    rows = []
+    for path in paths:
+        rows.append(f"<details><summary>{escape(path)}</summary><ul>")
+        for key in sorted(graph.by_file[path]):
+            symbol = graph.symbols[key]
+            links = "".join(f"<li>{escape(edge_text(graph, edge))}</li>" for edge in graph.edges(key, "both"))
+            rows.append(f"<li>{escape(symbol['qualifiedName'])} · line {symbol['lineStart']}<ul>{links}</ul></li>")
+        rows.append("</ul></details>")
+    page = """<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Melavonmen code graph</title><style>body{font:16px system-ui;max-width:70rem;margin:2rem auto;padding:0 1rem}
+details{padding:.5rem;border-bottom:1px solid #aaa}summary{cursor:pointer}li{margin:.2rem 0}</style>
+<h1>Melavonmen code graph</h1>""" + "\n".join(rows) + "</html>\n"
+    with destination.open("x", encoding="utf-8") as output:
+        output.write(page)
+    return {"path": str(destination.resolve()), "symbols": len(graph.symbols),
+            "edges": sum(map(len, graph.outgoing.values()))}
+
+
+def cli(argv):
+    options = vars(cli_parser().parse_args(argv))
+    command = options.pop("command")
+    use_json = options.pop("json", False)
+    project = options.pop("project", None)
+    override = options.pop("config", None)
+    options.pop("host", None)
+    tools = Tools(Workspace(project_root(project), override))
+    if command == "workspace":
+        result = {}
+        for repo in options["repo"]:
+            name, sep, path = repo.partition("=")
+            if not sep or not name or not path or name in result:
+                raise IndexErrorWithCode("Workspace repositories require unique NAME=PATH arguments")
+            result[name] = Tools(Workspace(project_root(path), override)).index.status()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if command == "visualize":
+        print(json.dumps(render_graph(tools, options["output"]), ensure_ascii=False, indent=2))
+        return
+    if command == "history":
+        name = "repository_history_" + options.pop("action")
     else:
-        raise RuntimeError("npm or Corepack is required to install the index engine")
-
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with TemporaryDirectory(prefix=".install-", dir=destination.parent) as temporary:
-        stage = Path(temporary) / "runtime"
-        stage.mkdir()
-        for name in ("package.json", "package-lock.json"):
-            shutil.copyfile(ROOT / name, stage / name)
-        subprocess.run(
-            [*installer, "ci", "--ignore-scripts", "--no-audit", "--no-fund"],
-            cwd=stage, env=env, stdin=subprocess.DEVNULL, stdout=sys.stderr, check=True,
-        )
-        for entrypoint in ENTRYPOINTS.values():
-            if not engine_path(stage, entrypoint).is_file():
-                raise RuntimeError(f"Installed package is missing {entrypoint}")
-        try:
-            stage.rename(destination)
-        except OSError:
-            if not all(engine_path(destination, entrypoint).is_file()
-                       for entrypoint in ENTRYPOINTS.values()):
-                raise
+        name = COMMANDS[command]
+    result = tools.invoke(name, {key: value for key, value in options.items() if value is not None})
+    if use_json:
+        print(json.dumps(result["structuredContent"], ensure_ascii=False, indent=2))
+    else:
+        print(result["content"][0]["text"])
 
 
-def engine_path(root, entrypoint):
-    return root / "node_modules" / "open-codebase-index" / "dist" / entrypoint
-
-
-def main(args):
-    mode = "cli" if args[:1] == ["--cli"] else "mcp"
-    if mode == "cli":
-        args = args[1:]
-
-    node = find_node()
-    env = os.environ.copy()
-    env["PATH"] = os.pathsep.join((str(node.parent), env.get("PATH", "")))
-    env["COREPACK_ENABLE_AUTO_PIN"] = "0"
-
-    lock_hash = hashlib.sha256((ROOT / "package-lock.json").read_bytes()).hexdigest()
-    cache = Path(env.get("XDG_CACHE_HOME") or Path.home() / ".cache")
-    target = cache / "melavonmen" / f"{platform.system()}-{platform.machine()}-{lock_hash}"
-    entrypoint = engine_path(target, ENTRYPOINTS[mode])
-    if not entrypoint.is_file():
-        install_runtime(env, target)
-    if not any(arg == "--host" or arg.startswith("--host=") for arg in args):
-        args = [*args, "--host", "codex"] if args or mode == "mcp" else ["--help"]
-    os.execve(node, [str(node), str(entrypoint), *args], env)
+def main(argv):
+    if argv[:1] == ["--cli"]:
+        cli(argv[1:])
+        return
+    parser = argparse.ArgumentParser(description="Melavonmen MCP over stdio")
+    parser.add_argument("--project")
+    parser.add_argument("--config")
+    parser.add_argument("--host", choices=["codex"], help=argparse.SUPPRESS)
+    args = parser.parse_args(argv)
+    Server(Tools(Workspace(project_root(args.project), args.config))).run()
 
 
 if __name__ == "__main__":
     try:
         main(sys.argv[1:])
-    except (RuntimeError, OSError, subprocess.CalledProcessError) as exc:
-        print(f"Melavonmen index: {exc}", file=sys.stderr)
+    except (IndexErrorWithCode, OSError, sqlite3.Error, ValueError) as exc:
+        print(f"Melavonmen: {exc}", file=sys.stderr)
         sys.exit(1)

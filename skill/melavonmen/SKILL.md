@@ -4,7 +4,7 @@ description: >-
   用于理解陌生仓库、按含义查源码、定位定义、追踪调用关系和分析代码变更影响。
   也用于需求编译、按 Doc 实施、核验并同步 Wiki，以及按一素材一文件交付素材图。
 metadata:
-  version: "3.0.0"
+  version: "3.1.0"
   author: LXFLGH
 ---
 

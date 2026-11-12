@@ -1,10 +1,10 @@
 # Melavonmen
 
-Melavonmen 将本地源码检索、定义定位、调用图和改动影响分析接入 Doc/Wiki 工作流。Codex 插件使用锁定的 `open-codebase-index@0.38.2` 后端，保留该版本的 23 个 MCP 工具和 5 个 prompts。
+Melavonmen 将本地源码索引、定义定位、调用图和改动影响分析接入 Codex 的 Doc/Wiki 工作流。3.1.0 使用仓库自带的 Python 索引和 MCP 服务。基础安装只需要 Python 3.10+ 和带 FTS5 的 SQLite，支持完全离线的结构索引。
 
 ## 安装到 Codex
 
-解压发布包后进入 `melavonmen-3.0.0/`。从本仓库安装时进入 `skill/melavonmen/`。在该目录运行以下命令，然后打开一个新的 Codex 聊天。
+解压发布包后进入 `melavonmen-3.1.0/`。从本仓库安装时进入 `skill/melavonmen/`。在该目录运行以下命令，然后在目标仓库打开一个新的 Codex 聊天。
 
 ```bash
 python3 runtime/package_plugin.py
@@ -12,29 +12,49 @@ codex plugin marketplace add "$(pwd)"
 codex plugin add melavonmen@melavonmen-local
 ```
 
-需要 Python 3.10+、Node.js 22.13+，首次启动还需要 npm 或 Corepack 以及 npm registry 访问。Linux Codex Desktop 可使用随应用安装的 Node.js，也可通过 `MELAVONMEN_NODE` 指定 Node.js 可执行文件。首次启动按锁文件安装后端到 `$XDG_CACHE_HOME/melavonmen` 或 `~/.cache/melavonmen`。可以提前运行 `python3 runtime/launch.py --cli --help` 准备缓存。后续启动复用缓存。保留同名服务 `codebase-index` 的单个活动来源，以免旧插件和 Melavonmen 重复注册。
+用 `$melavonmen:melavonmen` 或直接要求查源码、找调用者、分析变更。Codex 通过 `melavonmen-index` MCP 加载 23 个工具和 5 个 prompts。插件从聊天的工作目录确定检索范围。移动源码目录后需要重新构建和注册本地市场。
 
-## 使用
-
-在 Codex 中用 `$melavonmen:melavonmen` 或直接要求“找出源码中负责增量刷新的逻辑”“列出这个函数的调用者”。默认以当前聊天的工作区为检索范围。插件依赖本地市场构建目录，移动项目后请从新路径重新构建和注册。终端可以使用同一后端，在命令中把 `.` 换成目标仓库。
+## 终端和项目配置
 
 ```bash
-python3 runtime/launch.py --cli status --project .
 python3 runtime/launch.py --cli index --project .
+python3 runtime/launch.py --cli status --check-freshness --project .
 python3 runtime/launch.py --cli search '索引刷新' --project .
 python3 runtime/launch.py --cli definition discover_sources --project .
 python3 runtime/launch.py --cli graph callers discover_sources --project .
+python3 runtime/launch.py --cli impact --working-tree --project .
+python3 runtime/launch.py --cli visualize --project . --output graph.html
 ```
 
-本项目的 `.codebase-index/config.json` 使用 `indexing.mode: structural`，无需嵌入模型即可使用关键词、定义和调用图。在其他仓库中可沿用原有 Codebase Index 配置；需要无模型模式时，把该设置合并到目标仓库的配置。需要语义检索和相似实现时，设为 `hybrid`，选择 Ollama、OpenAI、Google 或兼容端点，重新启动会话并为该模式建索引。使用外部嵌入或重排服务会按所选服务配置处理源码片段。GitHub 历史仍按仓库显式启用，并使用既有 `gh` 登录。
+默认结构模式使用 SQLite FTS5 BM25、符号匹配和静态调用关系。Git 仓库按分支记录内容快照，并遵守 Git 忽略规则。修改、新增、删除或重命名文件后可增量刷新，未变内容复用解析结果和向量。索引保存在项目的 `.melavonmen/index.sqlite3`。Git 用于分支、变更影响和提交过滤。普通目录也能进行索引和检索。
 
-检索模式、嵌入模型和忽略规则见[上游配置](https://github.com/Helweg/open-codebase-index/blob/v0.38.2/docs/configuration.md)，工具及响应见[上游工具清单](https://github.com/Helweg/open-codebase-index/blob/v0.38.2/docs/tools.md)。Doc/Wiki 校验命令见 [校验器说明](references/90-tooling.md)。
+项目配置使用 `.melavonmen/config.json`。旧版 `.codebase-index/config.json` 中的常用检索设置可以作为配置回退。切换到新后端后运行一次 `index_codebase`，新后端会建立自己的索引。 `indexing.watchFiles` 默认开启，会检查已索引项目的变化。使用 `indexing.autoIndex: true` 可在首次查询时自动建库。
+
+需要按语义检索或找相似代码时，选择混合模式并指定嵌入服务。以下示例连接本机运行的 Ollama。
+
+```json
+{
+  "indexing": { "mode": "hybrid" },
+  "embeddingProvider": "ollama",
+  "ollama": {
+    "baseUrl": "http://127.0.0.1:11434",
+    "model": "nomic-embed-text"
+  }
+}
+```
+
+也可选 `openai`、`google` 或 `custom`。兼容端点在 `customProvider` 中填写 `baseUrl`、`model` 和可选的 `dimensions`。OpenAI 和 Google 可分别通过 `OPENAI_API_KEY`、`GEMINI_API_KEY` 读取凭据。配置外部服务时，选定的服务会收到用于生成向量或重排的源码片段。搜索支持目录、文件类型、块类型和 Git blame 过滤，也可通过 `search.fusionStrategy` 选择 `rrf` 或 `weighted`。调用 `add_knowledge_base` 可以把选定目录加入当前项目的检索范围。
+
+GitHub 历史可在项目配置的 `repositoryHistory.repositories` 中按仓库启用，格式为 `{"repository":"OWNER/REPO","enabled":true}`。同步和远程 PR 查询使用本机已登录的 `gh`。缓存历史可离线搜索，并带原始链接。
+
+调用图提供静态证据。Python 用 AST 提取，其他语言按源码结构和模块导入解析，无法确定的边会标记为未解析。动态分派、复杂宏、跨语言运行时调用，以及不同语言的解析深度需要结合源码与编译器核实。
 
 ## 验证
 
-安装插件后可用下列命令复跑校验器和 Codex 端到端测试。混合检索测试在本机启动模拟嵌入端点。
-
 ```bash
 python3 -m unittest discover -s scripts/tests -v
+python3 runtime/test_index.py -v
 python3 runtime/test_codex.py -v
 ```
+
+Codex 测试使用临时工作区及本机模拟嵌入端点。Doc/Wiki 校验命令见 [校验器说明](references/90-tooling.md)。

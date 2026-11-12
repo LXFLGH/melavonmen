@@ -1,8 +1,8 @@
 __pycache__/
 *.pyc
+build/
+.melavonmen/*
+!.melavonmen/config.json
+.codebase-index/
 .DS_Store
 Thumbs.db
-build/
-runtime/node_modules/
-.codebase-index/*
-!.codebase-index/config.json
