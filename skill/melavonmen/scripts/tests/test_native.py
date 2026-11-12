@@ -292,7 +292,8 @@ class NativeIndexTests(unittest.TestCase):
         self.assertIn("cold_build_ms", data)
         self.assertIn("whole_source_estimated_tokens", data)
         self.assertIn("response_estimated_tokens", data)
-        self.assertIn("ripgrep_baseline", data)
+        self.assertIn("raw_search_baseline", data)
+        self.assertIn("p50_ms", data["raw_search_baseline"])
         self.assertTrue(data["stats"]["indexed_sources"] >= 9)
 
     @unittest.skipUnless(importlib.util.find_spec("tree_sitter_language_pack") and
