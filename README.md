@@ -71,7 +71,7 @@ assets/screenshots/fcn/godot/  FCN Godot 像素主题实机截图（PNG 原图�
 
 ## 下载页与 Skill 发布（2026-11-12）
 
-- `downloads.html` 展示 Melavonmen 3.0.0 的功能、安装步骤和校验值。
-- `skill/melavonmen/` 包含 Skill、校验器和 Codex 插件源码。进入该目录后执行 `python3 runtime/package_plugin.py` 构建安装目录，完整步骤见 [安装说明](skill/melavonmen/README.md)。
-- [GitHub Release v3.0.0](https://github.com/LXFLGH/melavonmen/releases/tag/v3.0.0) 和 [站点镜像](downloads/melavonmen-3.0.0.zip) 提供同一个 65,640 B 的 ZIP。SHA-256 为 `8a04224d9a62081a7aed38e4b8816939adfea489e8caf121cb2cc3357bc373d3`。
+- `downloads.html` 展示 Melavonmen 3.1.0 的功能、安装步骤和校验值。
+- `skill/melavonmen/` 包含 Skill、校验器及独立的 Python 索引和 MCP 服务。进入该目录后执行 `python3 runtime/package_plugin.py` 构建安装目录，完整步骤见 [安装说明](skill/melavonmen/README.md)。
+- [GitHub Release v3.1.0](https://github.com/LXFLGH/melavonmen/releases/tag/v3.1.0) 和 [站点镜像](downloads/melavonmen-3.1.0.zip) 提供同一个 93,130 B 的 ZIP。SHA-256 为 `5f26a80ea9bc82906124a0599ddd3c2434a6b2515226741c848b5b4e510780da`。
 - 旧版纯 Skill 包见 [v2.3.1](https://github.com/LXFLGH/melavonmen/releases/tag/v2.3.1)。
